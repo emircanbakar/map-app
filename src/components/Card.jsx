@@ -1,31 +1,40 @@
 import React, { useState } from "react";
 
-const Card = () => {
+const Card = ({ onStyleChange, searchLocation }) => {
   const [details, setDetails] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleDetails = () => {
-    setDetails(!details);
+  const toggleDropdown = () => setIsOpen(!isOpen);
+  const handleDetails = () => setDetails(!details);
+
+  const handleSearch = () => {
+    searchLocation(searchQuery);
   };
 
   return (
     <div className="fixed top-4 left-4 bg-white w-[350px] h-auto shadow-lg p-4 z-10 rounded-md">
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-grow">
+      <div className="flex items-center space-x-2 transition-all">
+        <div className="relative flex-grow transition-all">
           <label htmlFor="Search" className="sr-only">
             Search
           </label>
-
           <input
             type="text"
             id="Search"
             placeholder="Search for..."
-            className="w-full rounded-md p-2.5 pe-10 shadow-sm sm:text-sm border-2 border-gray-200"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-md p-2.5 pe-10 shadow-sm sm:text-sm border-2 border-gray-200 focus:border-blue-500 transition-all"
           />
 
           <span className="absolute inset-y-0 end-0 grid w-10 place-content-center">
-            <button type="button" className="text-gray-600 hover:text-gray-700">
+            <button
+              type="button"
+              onClick={handleSearch}
+              className="text-gray-600 hover:text-gray-700"
+            >
               <span className="sr-only">Search</span>
-
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -43,30 +52,102 @@ const Card = () => {
             </button>
           </span>
         </div>
-
         <button
           onClick={handleDetails}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all"
         >
-          More
+          <svg
+            className="h-6 w-6"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
         </button>
       </div>
 
       {details && (
-        <div className="mt-4">
-          <div className="mt-4">park yeşil alan</div>
-          <div className="mt-4">
-            <label
-              htmlFor="AcceptConditions"
-              className="relative inline-block h-8 w-14 cursor-pointer rounded-full bg-gray-300 transition [-webkit-tap-highlight-color:_transparent] peer-checked:bg-green-500"
+        <div className="mt-4 transition-all">
+          {/* ispark ve yeşil alan için divler yapılacak + dropdown fullsize olabilir UI düzeltmeleri yap DAHA APİLERİ EKLEMEDİN UNUTMA**** */}
+          <div className="mt-4 flex items-center">
+            <button className="p-6 m-4 bg-blue-300">ispark</button>
+            <button className="p-6 m-4 bg-blue-300">ispark</button>
+          </div>
+
+          <div className="relative inline-block text-left mt-4">
+            <button
+              onClick={toggleDropdown}
+              className="inline-flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-100 focus:outline-none transition-all"
             >
-              <input
-                type="checkbox"
-                id="AcceptConditions"
-                className="peer sr-only"
-              />
-              <span className="absolute inset-y-0 start-0 m-1 size-6 rounded-full bg-white transition-all peer-checked:start-6"></span>
-            </label>
+              Harita Görünümleri
+              <svg
+                className="-mr-1 ml-2 h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            {isOpen && (
+              <div className="absolute right-0 z-10 mt-2 w-auto bg-white border border-gray-300 rounded-md shadow-lg transition-all">
+                <button
+                  onClick={() =>
+                    onStyleChange(
+                      "https://api.maptiler.com/maps/streets/style.json?key=9HThlwugrS3kGNIjxi5r"
+                    )
+                  }
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
+                >
+                  Streets
+                </button>
+                <button
+                  onClick={() =>
+                    onStyleChange(
+                      "https://api.maptiler.com/maps/streets-dark/style.json?key=9HThlwugrS3kGNIjxi5r"
+                    )
+                  }
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
+                >
+                  Streets Dark
+                </button>
+                <button
+                  onClick={() =>
+                    onStyleChange(
+                      "https://api.maptiler.com/maps/hybrid/style.json?key=9HThlwugrS3kGNIjxi5r"
+                    )
+                  }
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
+                >
+                  Satellite Hybrid
+                </button>
+                <button
+                  onClick={() =>
+                    onStyleChange(
+                      "https://api.maptiler.com/maps/outdoor/style.json?key=9HThlwugrS3kGNIjxi5r"
+                    )
+                  }
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
+                >
+                  Outdoor
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
