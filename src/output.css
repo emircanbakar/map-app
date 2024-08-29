@@ -790,6 +790,10 @@ video {
   width: 1.5rem;
 }
 
+.w-2 {
+  width: 0.5rem;
+}
+
 .flex-grow {
   flex-grow: 1;
 }

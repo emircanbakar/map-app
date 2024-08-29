@@ -1,9 +1,20 @@
 import React, { useState } from "react";
 
-const Card = ({ onStyleChange, searchLocation }) => {
+const Card = ({ onStyleChange, searchLocation, onShowMarkers }) => {
   const [details, setDetails] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeMarkerType, setActiveMarkerType] = useState(null);
+
+  const handleButtonClick = (type) => {
+    if (activeMarkerType === type) {
+      setActiveMarkerType(null);
+      onShowMarkers(null);
+    } else {
+      setActiveMarkerType(type);
+      onShowMarkers(type);
+    }
+  };
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const handleDetails = () => setDetails(!details);
@@ -77,9 +88,27 @@ const Card = ({ onStyleChange, searchLocation }) => {
       {details && (
         <div className="mt-4 transition-all">
           {/* ispark ve yeşil alan için divler yapılacak + dropdown fullsize olabilir UI düzeltmeleri yap DAHA APİLERİ EKLEMEDİN UNUTMA**** */}
-          <div className="mt-4 flex items-center">
-            <button className="p-6 m-4 bg-blue-300">ispark</button>
-            <button className="p-6 m-4 bg-blue-300">ispark</button>
+          <div className="mt-4 flex items-center justify-between">
+            <button
+              onClick={() => handleButtonClick("ispark")}
+              className={`flex justify-center items-center m-4 flex-1 h-16 p-4 text-center transition-all duration-300 ${
+                activeMarkerType === "ispark"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+              } rounded-md`}
+            >
+              Otoparklar
+            </button>
+            <button
+              onClick={() => handleButtonClick("greenSpaces")}
+              className={`flex justify-center items-center m-4 flex-1 h-16 p-4 text-center transition-all duration-300 ${
+                activeMarkerType === "greenSpaces"
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+              } rounded-md`}
+            >
+              Yeşil Alanlar
+            </button>
           </div>
 
           <div className="relative inline-block text-left mt-4">
@@ -139,12 +168,12 @@ const Card = ({ onStyleChange, searchLocation }) => {
                 <button
                   onClick={() =>
                     onStyleChange(
-                      "https://api.maptiler.com/maps/outdoor/style.json?key=9HThlwugrS3kGNIjxi5r"
+                      "https://api.maptiler.com/maps/topo-v2-dark/style.json?key=9HThlwugrS3kGNIjxi5r"
                     )
                   }
                   className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
                 >
-                  Outdoor
+                  Topo night
                 </button>
               </div>
             )}
