@@ -104,7 +104,7 @@ const Map = () => {
               const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
                 <p>Park veya Yeşil Alan</p>
                 <strong>${space["MAHAL ADI"] || "Unknown"}</strong><br/>
-                ${space.TUR || "Unknown"}</br>${space.ILCE || "Unknown"}
+                ${space.TUR || "Unknown"}</br>${space.ILCE || "Unknown"}</br>
                 <button onclick="handleEditClick('${space["MAHAL ADI"]}', '${
                 space.TUR
               }')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
@@ -139,7 +139,7 @@ const Map = () => {
       const updatedPopupHTML = `
         <p>Düzenlenmiş Konum</p>
         <strong>${formData.name}</strong><br/>
-        ${formData.description}
+        ${formData.description}</br>
         <button onclick="handleEditClick('${formData.name}', '${formData.description}')">Edit</button>
       `;
       editingMarker.setPopup(
@@ -270,7 +270,7 @@ const Map = () => {
           <form onSubmit={handleFormSubmit}>
             <div>
               <label>
-                Name:
+                İsim: 
                 <input
                   type="text"
                   name="name"
@@ -281,7 +281,7 @@ const Map = () => {
             </div>
             <div>
               <label>
-                Description:
+                Açıklama: 
                 <input
                   type="text"
                   name="description"
@@ -290,8 +290,8 @@ const Map = () => {
                 />
               </label>
             </div>
-            <button type="submit" class="m-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
-            <button type="button" class="m-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600" onClick={() => setIsEditing(false)}>
+            <button type="submit" class="m-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all">Save</button>
+            <button type="button" class="m-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-all" onClick={() => setIsEditing(false)}>
               Cancel
             </button>
           </form>
