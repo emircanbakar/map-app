@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Card from "./Card";
 import axios from "axios";
+import PopUpSave from "./PopUpSave";
 
 const Map = () => {
   const mapContainerRef = useRef(null);
@@ -16,12 +17,12 @@ const Map = () => {
   const [activeMarkerType, setActiveMarkerType] = useState(null);
   const markers = useRef([]);
 
-  // Edit modunu ve düzenlenen marker bilgilerini takip etmek için yeni state'ler
   const [isEditing, setIsEditing] = useState(false);
   const [editingMarker, setEditingMarker] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    type: "",
   });
 
   const handleStyleChange = (styleUrl) => {
@@ -69,15 +70,10 @@ const Map = () => {
               const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
                 <p>Otopark</p>
                 <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
-                ${location.LOCATION_NAME || "Unknown"}</br>${
-                location.PARK_TYPE_ID || "Unknown"
-              }
-                </br>${location.CAPACITY_OF_PARK || "Unknown"}</br>${
-                location.COUNTY_NAME || "Unknown"
-              }</br>
+                ${location.LOCATION_NAME || "Unknown"}</br>
                 <button onclick="handleEditClick('${location.PARK_NAME}', '${
                 location.LOCATION_NAME
-              }')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+              }', 'ispark', ${longitude}, ${latitude})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
               `);
 
               marker.setPopup(popup);
@@ -104,10 +100,10 @@ const Map = () => {
               const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
                 <p>Park veya Yeşil Alan</p>
                 <strong>${space["MAHAL ADI"] || "Unknown"}</strong><br/>
-                ${space.TUR || "Unknown"}</br>${space.ILCE || "Unknown"}</br>
+                ${space.TUR || "Unknown"}</br>
                 <button onclick="handleEditClick('${space["MAHAL ADI"]}', '${
                 space.TUR
-              }')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+              }', 'greenSpaces', ${longitude}, ${latitude})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
               `);
 
               marker.setPopup(popup);
@@ -119,33 +115,107 @@ const Map = () => {
     }
   };
 
-  window.handleEditClick = (name, description) => {
-    setFormData({ name, description });
+  window.handleEditClick = (name, description, type, longitude, latitude) => {
+    setFormData({ name, description, longitude, latitude, type });
+    setEditingMarker({ name, description, type, longitude, latitude });
     setIsEditing(true);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+  const upsertIsparkData = async (data) => {
+    try {
+      const response = await axios.post(
+        "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
+            "Access-Control-Allow-Methods":
+              "GET, POST, PATCH, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers":
+              "Origin, Content-Type, X-Auth-Token",
+            " Access-Control-Max-Age": 86400,
+          },
+        }
+      );
+      return response.data.success;
+    } catch (error) {
+      console.error("Error updating İspark data:", error);
+      return false;
+    }
   };
 
-  const handleFormSubmit = (e) => {
+  const upsertGreenSpacesData = async (data) => {
+    try {
+      const response = await axios.post(
+        "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data.success;
+    } catch (error) {
+      console.error("Error updating Green Spaces data:", error);
+      return false;
+    }
+  };
+
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
 
     if (editingMarker) {
-      const updatedPopupHTML = `
-        <p>Düzenlenmiş Konum</p>
-        <strong>${formData.name}</strong><br/>
-        ${formData.description}</br>
-        <button onclick="handleEditClick('${formData.name}', '${formData.description}')">Edit</button>
-      `;
-      editingMarker.setPopup(
-        new maplibregl.Popup({ offset: 25 }).setHTML(updatedPopupHTML)
-      );
-      setIsEditing(false);
+      let isparkSuccess = false;
+      let greenSpacesSuccess = false;
+
+      if (formData.type === "ispark") {
+        const dataForIspark = {
+          resource_id: "f4f56e58-5210-4f17-b852-effe356a890c",
+          records: [
+            {
+              PARK_NAME: formData.name || "",
+              LOCATION_NAME: formData.description || "",
+            },
+          ],
+        };
+        isparkSuccess = await upsertIsparkData(dataForIspark);
+      }
+
+      if (formData.type === "greenSpaces") {
+        const dataForGreenSpaces = {
+          resource_id: "d588f256-2982-43d2-b372-c38978d7200b",
+          records: [
+            {
+              MAHAL_ADI: formData.name || "",
+              TUR: formData.description || "",
+            },
+          ],
+        };
+        greenSpacesSuccess = await upsertGreenSpacesData(dataForGreenSpaces);
+      }
+
+      if (isparkSuccess || greenSpacesSuccess) {
+        console.log("Data updated successfully");
+
+        const updatedPopupHTML = `
+          <p>Düzenlenmiş Konum</p>
+          <strong>${formData.name || "No Name"}</strong><br/>
+          ${formData.description || "No Description"}</br>
+          <button onclick="handleEditClick('${formData.name || ""}', '${
+          formData.description || ""
+        }', '${formData.type || ""}', ${formData.longitude || 0}, ${
+          formData.latitude || 0
+        })" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+        `;
+        editingMarker.setPopup(
+          new maplibregl.Popup({ offset: 25 }).setHTML(updatedPopupHTML)
+        );
+        setIsEditing(false);
+      } else {
+        console.error("Failed to update data in one or both APIs");
+      }
     }
   };
 
@@ -255,47 +325,12 @@ const Map = () => {
       />
 
       {isEditing && (
-        <div
-          style={{
-            position: "absolute",
-            top: "10%",
-            left: "50%",
-            transform: "translateX(-50%)",
-            padding: "1em",
-            backgroundColor: "white",
-            borderRadius: "8px",
-            boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <form onSubmit={handleFormSubmit}>
-            <div>
-              <label>
-                İsim: 
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                />
-              </label>
-            </div>
-            <div>
-              <label>
-                Açıklama: 
-                <input
-                  type="text"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                />
-              </label>
-            </div>
-            <button type="submit" class="m-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all">Save</button>
-            <button type="button" class="m-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-all" onClick={() => setIsEditing(false)}>
-              Cancel
-            </button>
-          </form>
-        </div>
+        <PopUpSave
+          formData={formData}
+          setFormData={setFormData}
+          setIsEditing={setIsEditing}
+          handleFormSubmit={handleFormSubmit}
+        />
       )}
     </div>
   );
