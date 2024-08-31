@@ -1,46 +1,34 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useContext, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Card from "./Card";
 import axios from "axios";
 import PopUpSave from "./PopUpSave";
+import MapContext from "../context/MapContext";
 
 const Map = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
-  const [mapStyle, setMapStyle] = useState(
-    "https://api.maptiler.com/maps/streets/style.json?key=9HThlwugrS3kGNIjxi5r"
-  );
-  const [searchResult, setSearchResult] = useState(null);
-  const [apiLocations, setApiLocations] = useState([]);
-  const [greenSpaces, setGreenSpaces] = useState([]);
-  const [activeMarkerType, setActiveMarkerType] = useState(null);
   const markers = useRef([]);
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingMarker, setEditingMarker] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    type: "",
-  });
+  const {
+    mapStyle,
+    setMapStyle,
+    apiLocations,
+    setApiLocations,
+    greenSpaces,
+    setGreenSpaces,
+    activeMarkerType,
+    setActiveMarkerType,
+    isEditing,
+    setIsEditing,
+    editingMarker,
+    setEditingMarker,
+    formData,
+    setFormData,
+  } = useContext(MapContext);
 
   const handleStyleChange = (styleUrl) => {
     setMapStyle(styleUrl);
-  };
-
-  const searchLocation = async (query) => {
-    try {
-      const response = await axios.get(
-        `https://api.maptiler.com/geocoding/${encodeURIComponent(
-          query
-        )}.json?key=9HThlwugrS3kGNIjxi5r`
-      );
-      const coordinates = response.data.features[0].geometry.coordinates;
-      setSearchResult(coordinates);
-    } catch (error) {
-      console.error("Error fetching geocoding data:", error);
-    }
   };
 
   const toggleMarkers = (type) => {
@@ -67,14 +55,14 @@ const Map = () => {
                 .setLngLat([longitude, latitude])
                 .addTo(mapRef.current);
 
-              const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-                <p>Otopark</p>
-                <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
-                ${location.LOCATION_NAME || "Unknown"}</br>
-                <button onclick="handleEditClick('${location.PARK_NAME}', '${
-                location.LOCATION_NAME
-              }', 'ispark', ${longitude}, ${latitude})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
-              `);
+                const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+                  <p>${location._id ? `ID: ${location._id}` : 'ID: Unknown'}</p>
+                  <p>Otopark</p>
+                  <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
+                  ${location.LOCATION_NAME || "Unknown"}<br/>
+                  <button onclick="handleEditClick('${location.PARK_NAME || ""}', '${location.LOCATION_NAME || ""}', 'ispark', ${longitude}, ${latitude}, '${location._id || ""}')" class="mt-2 px-4 py-2 bg-blue-400 text-white rounded hover:bg-blue-600">Edit</button>
+                `);
+                
 
               marker.setPopup(popup);
               markers.current.push(marker);
@@ -97,14 +85,13 @@ const Map = () => {
                 .setLngLat([longitude, latitude])
                 .addTo(mapRef.current);
 
-              const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-                <p>Park veya Yeşil Alan</p>
-                <strong>${space["MAHAL ADI"] || "Unknown"}</strong><br/>
-                ${space.TUR || "Unknown"}</br>
-                <button onclick="handleEditClick('${space["MAHAL ADI"]}', '${
-                space.TUR
-              }', 'greenSpaces', ${longitude}, ${latitude})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
-              `);
+                const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+                  <p>${space._id ? `ID: ${space._id}` : 'ID: Unknown'}</p>
+                  <p>Park veya Yeşil Alan</p>
+                  <strong>${space["MAHAL ADI"] || "Unknown"}</strong><br/>
+                  ${space.TUR || "Unknown"}<br/>
+                  <button onclick="handleEditClick('${space["MAHAL ADI"] || ""}', '${space.TUR || ""}', 'greenSpaces', ${longitude}, ${latitude}, '${space._id || ""}')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-green-600">Edit</button>
+                `);
 
               marker.setPopup(popup);
               markers.current.push(marker);
@@ -115,53 +102,60 @@ const Map = () => {
     }
   };
 
-  window.handleEditClick = (name, description, type, longitude, latitude) => {
-    setFormData({ name, description, longitude, latitude, type });
+  window.handleEditClick = (
+    name,
+    description,
+    type,
+    longitude,
+    latitude,
+    _id
+  ) => {
+    setFormData({ name, description, longitude, latitude, type, _id });
     setEditingMarker({ name, description, type, longitude, latitude });
     setIsEditing(true);
   };
 
-  const upsertIsparkData = async (data) => {
-    try {
-      const response = await axios.post(
-        "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
-        data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
-            "Access-Control-Allow-Methods":
-              "GET, POST, PATCH, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers":
-              "Origin, Content-Type, X-Auth-Token",
-            " Access-Control-Max-Age": 86400,
-          },
-        }
-      );
-      return response.data.success;
-    } catch (error) {
-      console.error("Error updating İspark data:", error);
-      return false;
-    }
-  };
-
-  const upsertGreenSpacesData = async (data) => {
-    try {
-      const response = await axios.post(
-        "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
-        data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return response.data.success;
-    } catch (error) {
-      console.error("Error updating Green Spaces data:", error);
-      return false;
-    }
-  };
+  // const upsertIsparkData = async (data) => {
+  //   try {
+  //     const response = await axios.post(
+  //       "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
+  //       data,
+  //       {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           "Access-Control-Allow-Origin":
+  //             "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
+  //           "Access-Control-Allow-Methods":
+  //             "GET, POST, PATCH, PUT, DELETE, OPTIONS",
+  //           "Access-Control-Allow-Headers":
+  //             "Origin, Content-Type, X-Auth-Token",
+  //           " Access-Control-Max-Age": 86400,
+  //         },
+  //       }
+  //     );
+  //     return response.data.success;
+  //   } catch (error) {
+  //     console.error("Error updating İspark data:", error);
+  //     return false;
+  //   }
+  // };
+  // const upsertGreenSpacesData = async (data) => {
+  //   try {
+  //     const response = await axios.post(
+  //       "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
+  //       data,
+  //       {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+  //     return response.data.success;
+  //   } catch (error) {
+  //     console.error("Error updating Green Spaces data:", error);
+  //     return false;
+  //   }
+  // };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -173,6 +167,7 @@ const Map = () => {
       if (formData.type === "ispark") {
         const dataForIspark = {
           resource_id: "f4f56e58-5210-4f17-b852-effe356a890c",
+          id: formData._id,
           records: [
             {
               PARK_NAME: formData.name || "",
@@ -180,7 +175,7 @@ const Map = () => {
             },
           ],
         };
-        isparkSuccess = await upsertIsparkData(dataForIspark);
+        // isparkSuccess = await upsertIsparkData(dataForIspark);
       }
 
       if (formData.type === "greenSpaces") {
@@ -193,7 +188,7 @@ const Map = () => {
             },
           ],
         };
-        greenSpacesSuccess = await upsertGreenSpacesData(dataForGreenSpaces);
+        // greenSpacesSuccess = await upsertGreenSpacesData(dataForGreenSpaces);
       }
 
       if (isparkSuccess || greenSpacesSuccess) {
@@ -255,7 +250,7 @@ const Map = () => {
       mapRef.current.on("load", () => {
         mapRef.current.addLayer({
           id: "3d-buildings",
-          source: "composite",
+          source: "openmaptiles",
           "source-layer": "building",
           filter: ["==", "extrude", "true"],
           type: "fill-extrusion",
@@ -301,27 +296,63 @@ const Map = () => {
     };
   }, [mapStyle]);
 
-  useEffect(() => {
-    if (searchResult && mapRef.current) {
-      markers.current.forEach((marker) => marker.remove());
-      markers.current = [];
+  // const searchLocation = async (query) => {
+  //   try {
+  //     const response = await axios.get(
+  //       `https://api.maptiler.com/geocoding/${encodeURIComponent(
+  //         query
+  //       )}.json?key=9HThlwugrS3kGNIjxi5r`
+  //     );
+  //     const coordinates = response.data.features[0].geometry.coordinates;
+  //     setSearchResult(coordinates);
+  //   } catch (error) {
+  //     console.error("Error fetching geocoding data:", error);
+  //   }
+  // };
 
-      mapRef.current.flyTo({ center: searchResult, zoom: 14 });
-      const newMarker = new maplibregl.Marker()
-        .setLngLat(searchResult)
-        .addTo(mapRef.current);
-      markers.current.push(newMarker);
-    }
-  }, [searchResult]);
+  // useEffect(() => {
+  //   if (searchResult && mapRef.current) {
+  //     markers.current.forEach((marker) => marker.remove());
+  //     markers.current = [];
+
+  //     mapRef.current.flyTo({ center: searchResult, zoom: 14 });
+  //     const newMarker = new maplibregl.Marker()
+  //       .setLngLat(searchResult)
+  //       .addTo(mapRef.current);
+  //     markers.current.push(newMarker);
+  //   }
+  // }, [searchResult]);
+
+  const showPopup = (name, description, type, longitude, latitude) => {
+    const popupHTML = `
+      <p>${type === "ispark" ? "Otopark" : "Park veya Yeşil Alan"}</p>
+      <strong>${name || "Unknown"}</strong><br/>
+      ${description || "Unknown"}<br/>
+      <button onclick="handleEditClick('${name || ""}', '${description || ""}', '${type || ""}', ${longitude || 0}, ${latitude || 0})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+    `;
+
+    const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupHTML);
+    const marker = new maplibregl.Marker()
+      .setLngLat([longitude, latitude])
+      .setPopup(popup)
+      .addTo(mapRef.current);
+  
+    markers.current.push(marker);
+  };
+  
+  
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100vh" }}>
-      <div ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
+    <div className="relative h-screen w-full">
+      <div ref={mapContainerRef} className="w-full h-full" />
 
       <Card
         onStyleChange={handleStyleChange}
-        searchLocation={searchLocation}
         onShowMarkers={toggleMarkers}
+        markers={markers}
+        mapRef={mapRef}
+        formData={formData}
+        showPopup={showPopup}
       />
 
       {isEditing && (

@@ -1,10 +1,23 @@
-import React, { useState } from "react";
+import React, { useContext } from "react";
+import MapContext from "../context/MapContext";
+import Dropdown from "./Dropdown";
+import Search from "./Search";
 
-const Card = ({ onStyleChange, searchLocation, onShowMarkers }) => {
-  const [details, setDetails] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeMarkerType, setActiveMarkerType] = useState(null);
+const Card = ({
+  onStyleChange,
+  onShowMarkers,
+  markers,
+  mapRef,
+  showPopup,
+  formData,
+}) => {
+  const {
+    activeMarkerType,
+    setActiveMarkerType,
+    isOpen,
+    setIsOpen,
+    details,
+  } = useContext(MapContext);
 
   const handleButtonClick = (type) => {
     if (activeMarkerType === type) {
@@ -17,76 +30,14 @@ const Card = ({ onStyleChange, searchLocation, onShowMarkers }) => {
   };
 
   const toggleDropdown = () => setIsOpen(!isOpen);
-  const handleDetails = () => setDetails(!details);
-
-  const handleSearch = () => {
-    searchLocation(searchQuery);
-  };
 
   return (
     <div className="fixed top-4 left-4 bg-white w-[350px] h-auto shadow-lg p-4 z-10 rounded-md">
-      <div className="flex items-center space-x-2 transition-all">
-        <div className="relative flex-grow transition-all">
-          <label htmlFor="Search" className="sr-only">
-            Search
-          </label>
-          <input
-            type="text"
-            id="Search"
-            placeholder="Search for..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-md p-2.5 pe-10 shadow-sm sm:text-sm border-2 border-gray-200 focus:border-blue-500 transition-all"
-          />
-
-          <span className="absolute inset-y-0 end-0 grid w-10 place-content-center">
-            <button
-              type="button"
-              onClick={handleSearch}
-              className="text-gray-600 hover:text-gray-700"
-            >
-              <span className="sr-only">Search</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                />
-              </svg>
-            </button>
-          </span>
-        </div>
-        <button
-          onClick={handleDetails}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all"
-        >
-          <svg
-            className="h-6 w-6"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
-      </div>
+      <Search markers={markers} mapRef={mapRef}/>
 
       {details && (
         <div className="mt-4 transition-all">
+
           {/* ispark ve yeşil alan için divler yapılacak + dropdown fullsize olabilir UI düzeltmeleri yap DAHA APİLERİ EKLEMEDİN UNUTMA**** */}
           <div className="mt-4 flex items-center justify-between">
             <button
@@ -110,6 +61,8 @@ const Card = ({ onStyleChange, searchLocation, onShowMarkers }) => {
               Yeşil Alanlar
             </button>
           </div>
+
+          <Dropdown markers={markers} mapRef={mapRef} showPopup={showPopup} formData={formData} />
 
           <div className="relative inline-block text-left mt-4">
             <button
