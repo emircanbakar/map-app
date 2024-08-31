@@ -34,13 +34,12 @@ const Map = () => {
   };
 
   const toggleMarkers = (type) => {
-    // Remove existing markers
     markers.current.forEach((markerObj) => {
       if (markerObj && markerObj.marker) {
-        markerObj.marker.remove(); // Properly remove the marker
+        markerObj.marker.remove(); 
       }
     });
-    markers.current = []; // Clear the markers array
+    markers.current = []; 
 
     if (activeMarkerType === type) {
       setActiveMarkerType(null);
@@ -132,47 +131,40 @@ const Map = () => {
     setIsEditing(true);
   };
 
-  // const upsertIsparkData = async (data) => {
-  //   try {
-  //     const response = await axios.post(
-  //       "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
-  //       data,
-  //       {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           "Access-Control-Allow-Origin":
-  //             "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
-  //           "Access-Control-Allow-Methods":
-  //             "GET, POST, PATCH, PUT, DELETE, OPTIONS",
-  //           "Access-Control-Allow-Headers":
-  //             "Origin, Content-Type, X-Auth-Token",
-  //           " Access-Control-Max-Age": 86400,
-  //         },
-  //       }
-  //     );
-  //     return response.data.success;
-  //   } catch (error) {
-  //     console.error("Error updating İspark data:", error);
-  //     return false;
-  //   }
-  // };
-  // const upsertGreenSpacesData = async (data) => {
-  //   try {
-  //     const response = await axios.post(
-  //       "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
-  //       data,
-  //       {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
-  //     return response.data.success;
-  //   } catch (error) {
-  //     console.error("Error updating Green Spaces data:", error);
-  //     return false;
-  //   }
-  // };
+  const upsertIsparkData = async (data) => {
+    try {
+      const response = await axios.post(
+        "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data.success;
+    } catch (error) {
+      console.error("Error updating İspark data:", error);
+      return false;
+    }
+  };
+  const upsertGreenSpacesData = async (data) => {
+    try {
+      const response = await axios.post(
+        "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data.success;
+    } catch (error) {
+      console.error("Error updating Green Spaces data:", error);
+      return false;
+    }
+  };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -192,7 +184,7 @@ const Map = () => {
             },
           ],
         };
-        // isparkSuccess = await upsertIsparkData(dataForIspark);
+        isparkSuccess = await upsertIsparkData(dataForIspark);
       }
 
       if (formData.type === "greenSpaces") {
@@ -205,7 +197,7 @@ const Map = () => {
             },
           ],
         };
-        // greenSpacesSuccess = await upsertGreenSpacesData(dataForGreenSpaces);
+        greenSpacesSuccess = await upsertGreenSpacesData(dataForGreenSpaces);
       }
 
       if (isparkSuccess || greenSpacesSuccess) {

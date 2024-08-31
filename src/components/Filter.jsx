@@ -7,7 +7,6 @@ const Filter = ({ onFilter }) => {
   const [selectedType, setSelectedType] = useState("");
 
   useEffect(() => {
-    // Benzersiz park türlerini elde et
     const uniqueTypes = Array.from(
       new Set(parkTypes.map((type) => type.PARK_TYPE_ID))
     );
@@ -15,15 +14,12 @@ const Filter = ({ onFilter }) => {
   }, [parkTypes]);
 
   useEffect(() => {
-    // Fetch park types from the API
     const fetchParkTypes = async () => {
       try {
         const response = await axios.get(
           "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=f4f56e58-5210-4f17-b852-effe356a890c"
-        ); // API URL'inizi buraya ekleyin
+        );
         const data = response.data;
-
-        // Extract park types from the result
         if (data.success && data.result && Array.isArray(data.result.records)) {
           setParkTypes(data.result.records);
         } else {
