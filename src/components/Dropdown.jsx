@@ -85,7 +85,7 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
     <div>
       <div className="my-4 bg-white p-4 rounded-lg border-2 border-gray-300 z-10">
         <div className="mb-4">
-          <label htmlFor="isparkDropdown" className="mr-2">
+          <label className="mr-2">
             İspark Otoparkları:
           </label>
           <select
@@ -94,7 +94,7 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
             onChange={(e) => setSelectedParking(e.target.value)}
             className="w-full border border-gray-300 rounded p-2 my-2"
           >
-            <option value="">Seçiniz</option>
+            <option>Seçiniz</option>
             {apiLocations.map((loc) => (
               <option key={loc.PARK_NAME} value={loc.PARK_NAME}>
                 {loc.PARK_NAME}
@@ -109,7 +109,7 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
           </button>
         </div>
         <div>
-          <label htmlFor="greenSpacesDropdown" className="mr-2">
+          <label className="mr-2">
             Yeşil Alanlar:
           </label>
           <select
@@ -118,7 +118,7 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
             onChange={(e) => setSelectedGreenSpace(e.target.value)}
             className="w-full border border-gray-300 rounded p-2 my-2"
           >
-            <option value="">Seçiniz</option>
+            <option>Seçiniz</option>
             {greenSpaces.map((space) => (
               <option key={space["MAHAL ADI"]} value={space["MAHAL ADI"]}>
                 {space["MAHAL ADI"]}

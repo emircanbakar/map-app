@@ -3,6 +3,7 @@ import MapContext from "../context/MapContext";
 import Dropdown from "./Dropdown";
 import maplibregl from "maplibre-gl";
 import Filter from "./Filter"; // Filter bileşenini içe aktar
+import ChangeMap from "./ChangeMap";
 
 const Card = ({
   onStyleChange,
@@ -73,7 +74,7 @@ const Card = ({
   
         // Create and configure the popup
         const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-          <p>${typeId === "ispark" ? "Otopark" : "Park veya Yeşil Alan"}</p>
+          <p>Otopark</p>
           <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
           ${location.LOCATION_NAME || "Unknown"}<br/>
           <button onclick="handleEditClick('${location.PARK_NAME || ""}', '${location.LOCATION_NAME || ""}', '${typeId}', ${longitude}, ${latitude}, '${location._id || ""}')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
@@ -222,48 +223,49 @@ const Card = ({
               </svg>
             </button>
             {isOpen && (
-              <div className="absolute right-0 z-10 mt-2 w-auto bg-white border border-gray-300 rounded-md shadow-lg transition-all">
-                <button
-                  onClick={() =>
-                    onStyleChange(
-                      "https://api.maptiler.com/maps/streets/style.json?key=9HThlwugrS3kGNIjxi5r"
-                    )
-                  }
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
-                >
-                  Streets
-                </button>
-                <button
-                  onClick={() =>
-                    onStyleChange(
-                      "https://api.maptiler.com/maps/streets-dark/style.json?key=9HThlwugrS3kGNIjxi5r"
-                    )
-                  }
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
-                >
-                  Streets Dark
-                </button>
-                <button
-                  onClick={() =>
-                    onStyleChange(
-                      "https://api.maptiler.com/maps/hybrid/style.json?key=9HThlwugrS3kGNIjxi5r"
-                    )
-                  }
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
-                >
-                  Satellite Hybrid
-                </button>
-                <button
-                  onClick={() =>
-                    onStyleChange(
-                      "https://api.maptiler.com/maps/topo-v2-dark/style.json?key=9HThlwugrS3kGNIjxi5r"
-                    )
-                  }
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
-                >
-                  Topo night
-                </button>
-              </div>
+              <ChangeMap onStyleChange={onStyleChange} />
+              // <div className="absolute right-0 z-10 mt-2 w-auto bg-white border border-gray-300 rounded-md shadow-lg transition-all">
+              //   <button
+              //     onClick={() =>
+              //       onStyleChange(
+              //         "https://api.maptiler.com/maps/streets/style.json?key=9HThlwugrS3kGNIjxi5r"
+              //       )
+              //     }
+              //     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
+              //   >
+              //     Streets
+              //   </button>
+              //   <button
+              //     onClick={() =>
+              //       onStyleChange(
+              //         "https://api.maptiler.com/maps/streets-dark/style.json?key=9HThlwugrS3kGNIjxi5r"
+              //       )
+              //     }
+              //     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
+              //   >
+              //     Streets Dark
+              //   </button>
+              //   <button
+              //     onClick={() =>
+              //       onStyleChange(
+              //         "https://api.maptiler.com/maps/hybrid/style.json?key=9HThlwugrS3kGNIjxi5r"
+              //       )
+              //     }
+              //     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
+              //   >
+              //     Satellite Hybrid
+              //   </button>
+              //   <button
+              //     onClick={() =>
+              //       onStyleChange(
+              //         "https://api.maptiler.com/maps/topo-v2-dark/style.json?key=9HThlwugrS3kGNIjxi5r"
+              //       )
+              //     }
+              //     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
+              //   >
+              //     Topo night
+              //   </button>
+              // </div>
             )}
           </div>
         </div>

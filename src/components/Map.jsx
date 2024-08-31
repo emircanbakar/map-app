@@ -34,13 +34,17 @@ const Map = () => {
   };
 
   const toggleMarkers = (type) => {
+    // Remove existing markers
+    markers.current.forEach((markerObj) => {
+      if (markerObj && markerObj.marker) {
+        markerObj.marker.remove(); // Properly remove the marker
+      }
+    });
+    markers.current = []; // Clear the markers array
+
     if (activeMarkerType === type) {
-      markers.current.forEach((marker) => marker.remove());
-      markers.current = [];
       setActiveMarkerType(null);
     } else {
-      markers.current.forEach((marker) => marker.remove());
-      markers.current = [];
       setActiveMarkerType(type);
 
       if (type === "ispark") {
@@ -58,20 +62,21 @@ const Map = () => {
                 .addTo(mapRef.current);
 
               const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-                  <p>${location._id ? `ID: ${location._id}` : "ID: Unknown"}</p>
-                  <p>Otopark</p>
-                  <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
-                  ${location.LOCATION_NAME || "Unknown"}<br/>
-                  <button onclick="handleEditClick('${
-                    location.PARK_NAME || ""
-                  }', '${
+                <p>${location._id ? `ID: ${location._id}` : "ID: Unknown"}</p>
+                <p>Otopark</p>
+                <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
+                ${location.LOCATION_NAME || "Unknown"}<br/>
+                <button onclick="handleEditClick('${
+                  location.PARK_NAME || ""
+                }', '${
                 location.LOCATION_NAME || ""
               }', 'ispark', ${longitude}, ${latitude}, '${
                 location._id || ""
               }')" class="mt-2 px-4 py-2 bg-blue-400 text-white rounded hover:bg-blue-600">Edit</button>
-                `);
+              `);
+
               marker.setPopup(popup);
-              markers.current.push(marker);
+              markers.current.push({ marker, type: "ispark" }); // Store the marker correctly
             }
           }
         });
@@ -92,21 +97,21 @@ const Map = () => {
                 .addTo(mapRef.current);
 
               const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-                  <p>${space._id ? `ID: ${space._id}` : "ID: Unknown"}</p>
-                  <p>Park veya Yeşil Alan</p>
-                  <strong>${space["MAHAL ADI"] || "Unknown"}</strong><br/>
-                  ${space.TUR || "Unknown"}<br/>
-                  <button onclick="handleEditClick('${
-                    space["MAHAL ADI"] || ""
-                  }', '${
+                <p>${space._id ? `ID: ${space._id}` : "ID: Unknown"}</p>
+                <p>Park veya Yeşil Alan</p>
+                <strong>${space["MAHAL ADI"] || "Unknown"}</strong><br/>
+                ${space.TUR || "Unknown"}<br/>
+                <button onclick="handleEditClick('${
+                  space["MAHAL ADI"] || ""
+                }', '${
                 space.TUR || ""
               }', 'greenSpaces', ${longitude}, ${latitude}, '${
                 space._id || ""
               }')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-green-600">Edit</button>
-                `);
+              `);
 
               marker.setPopup(popup);
-              markers.current.push(marker);
+              markers.current.push({ marker, type: "greenSpaces" }); // Store the marker correctly
             }
           }
         });
