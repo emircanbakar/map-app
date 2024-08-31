@@ -1,7 +1,8 @@
 import React, { useContext } from "react";
 import MapContext from "../context/MapContext";
 import Dropdown from "./Dropdown";
-import Search from "./Search";
+import maplibregl from "maplibre-gl";
+import Filter from "./Filter"; // Filter bileşenini içe aktar
 
 const Card = ({
   onStyleChange,
@@ -10,6 +11,7 @@ const Card = ({
   mapRef,
   showPopup,
   formData,
+  searchLocation,
 }) => {
   const {
     activeMarkerType,
@@ -17,6 +19,10 @@ const Card = ({
     isOpen,
     setIsOpen,
     details,
+    setDetails,
+    searchQuery,
+    setSearchQuery,
+    apiLocations,
   } = useContext(MapContext);
 
   const handleButtonClick = (type) => {
@@ -29,20 +35,142 @@ const Card = ({
     }
   };
 
-  const toggleDropdown = () => setIsOpen(!isOpen);
+  const handleDetails = () => setDetails(!details);
 
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      searchLocation(searchQuery);
+    } else {
+      console.error("Search query is empty");
+    }
+  };
+
+  const toggleDropdown = () => setIsOpen(!isOpen);
+  const handleFilter = (typeId) => {
+    console.log("Handle filter for typeId:", typeId);
+    // Uncomment the following line if you need to debug API locations
+    // console.log("API Locations:", apiLocations);
+  
+    // Filter and map markers based on typeId
+    const filteredMarkers = apiLocations
+      .filter((location) => location.PARK_TYPE_ID === typeId)
+      .map((location) => {
+        const longitude = parseFloat(location.LONGITUDE);
+        const latitude = parseFloat(location.LATITUDE);
+  
+        // Log invalid coordinates for debugging
+        if (isNaN(longitude) || isNaN(latitude)) {
+          console.log("Invalid coordinates:", longitude, latitude);
+          return null;
+        }
+  
+        // Create marker element based on typeId
+        const el = document.createElement("div");
+        el.className = typeId === "ispark" ? "ibb-marker" : "default-marker";
+  
+        // Create and configure the marker
+        const marker = new maplibregl.Marker(el).setLngLat([longitude, latitude]);
+  
+        // Create and configure the popup
+        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+          <p>${typeId === "ispark" ? "Otopark" : "Park veya Yeşil Alan"}</p>
+          <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
+          ${location.LOCATION_NAME || "Unknown"}<br/>
+          <button onclick="handleEditClick('${location.PARK_NAME || ""}', '${location.LOCATION_NAME || ""}', '${typeId}', ${longitude}, ${latitude}, '${location._id || ""}')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+        `);
+  
+        marker.setPopup(popup);
+  
+        return { marker, type: typeId };
+      })
+      .filter((markerObj) => markerObj !== null);
+  
+    // Remove existing markers
+    markers.current.forEach((markerObj) => {
+      if (markerObj && markerObj.marker) {
+        markerObj.marker.remove(); // Ensure marker is removed from the map
+      }
+    });
+    markers.current = []; // Clear the markers array
+  
+    // Add filtered markers to the map
+    filteredMarkers.forEach((markerObj) => {
+      markerObj.marker.addTo(mapRef.current);
+      markers.current.push(markerObj); // Store the marker object
+    });
+  
+    console.log("Filtered markers added:", filteredMarkers);
+  };
+  
   return (
     <div className="fixed top-4 left-4 bg-white w-[350px] h-auto shadow-lg p-4 z-10 rounded-md">
-      <Search markers={markers} mapRef={mapRef}/>
+      {/*search bar*/}
+      <div className="flex items-center space-x-2 transition-all">
+        <div className="relative flex-grow transition-all">
+          <label htmlFor="Search" className="sr-only">
+            Search
+          </label>
+          <input
+            type="text"
+            id="Search"
+            placeholder="Search for..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-md p-2.5 pe-10 shadow-sm sm:text-sm border-2 border-gray-200 focus:border-blue-500 transition-all"
+          />
+
+          <span className="absolute inset-y-0 end-0 grid w-10 place-content-center">
+            <button
+              type="button"
+              onClick={handleSearch}
+              className="text-gray-600 hover:text-gray-700"
+            >
+              <span className="sr-only">Search</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+                className="size-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                />
+              </svg>
+            </button>
+          </span>
+        </div>
+        <button
+          onClick={handleDetails}
+          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all"
+        >
+          <svg
+            className="h-6 w-6"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+      </div>
 
       {details && (
         <div className="mt-4 transition-all">
-
-          {/* ispark ve yeşil alan için divler yapılacak + dropdown fullsize olabilir UI düzeltmeleri yap DAHA APİLERİ EKLEMEDİN UNUTMA**** */}
           <div className="mt-4 flex items-center justify-between">
             <button
               onClick={() => handleButtonClick("ispark")}
-              className={`flex justify-center items-center m-4 flex-1 h-16 p-4 text-center transition-all duration-300 ${
+              className={`flex justify-center items-center my-4 mr-2 flex-1 h-16 p-4 text-center transition-all duration-300 ${
                 activeMarkerType === "ispark"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-200 text-gray-800"
@@ -52,7 +180,7 @@ const Card = ({
             </button>
             <button
               onClick={() => handleButtonClick("greenSpaces")}
-              className={`flex justify-center items-center m-4 flex-1 h-16 p-4 text-center transition-all duration-300 ${
+              className={`flex justify-center items-center my-4 flex-1 h-16 p-4 text-center transition-all duration-300 ${
                 activeMarkerType === "greenSpaces"
                   ? "bg-green-500 text-white"
                   : "bg-gray-200 text-gray-800"
@@ -61,8 +189,15 @@ const Card = ({
               Yeşil Alanlar
             </button>
           </div>
+          <p>Otopark Çeşitleri</p>
+          <Filter onFilter={handleFilter} />
 
-          <Dropdown markers={markers} mapRef={mapRef} showPopup={showPopup} formData={formData} />
+          <Dropdown
+            markers={markers}
+            mapRef={mapRef}
+            showPopup={showPopup}
+            formData={formData}
+          />
 
           <div className="relative inline-block text-left mt-4">
             <button

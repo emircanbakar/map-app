@@ -12,6 +12,7 @@ const Search = ({ mapRef, markers }) => {
     searchQuery,
     setSearchQuery,
   } = useContext(MapContext);
+
   const handleDetails = () => setDetails(!details);
 
   const handleSearch = () => {
@@ -21,7 +22,7 @@ const Search = ({ mapRef, markers }) => {
       console.error("Search query is empty");
     }
   };
-  
+
   const searchLocation = async (query) => {
     try {
       const response = await axios.get(
@@ -40,7 +41,7 @@ const Search = ({ mapRef, markers }) => {
     if (searchResult && mapRef.current) {
       markers.current.forEach((marker) => marker.remove());
       markers.current = [];
-  
+
       mapRef.current.flyTo({ center: searchResult, zoom: 14 });
       const newMarker = new maplibregl.Marker()
         .setLngLat(searchResult)
@@ -48,7 +49,6 @@ const Search = ({ mapRef, markers }) => {
       markers.current.push(newMarker);
     }
   }, [searchResult]); // Bağımlılık dizisini ekleyin
-  
 
   return (
     <div className="flex items-center space-x-2 transition-all">

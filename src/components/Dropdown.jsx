@@ -13,18 +13,23 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
   } = useContext(MapContext);
 
   const addMarkerToLocation = (longitude, latitude) => {
-
     // Mevcut markerları temizle
-    markers.current.forEach((marker) => marker.remove());
-    markers.current = [];
-
+    markers.current.forEach((markerObj) => {
+      if (markerObj && markerObj.marker) {
+        markerObj.marker.remove(); // Ensure marker is removed from the map
+      }
+    });
+    markers.current = []; // Clear the markers array
+  
     // Yeni marker oluştur
     const newMarker = new maplibregl.Marker()
       .setLngLat([longitude, latitude])
       .addTo(mapRef.current);
-
+  
     // Marker'ı diziye ekle
-    markers.current.push(newMarker);
+    markers.current.push({ marker: newMarker, type: 'custom' });
+  
+    // Popup göster
     showPopup(
       formData.name,
       formData.description,
@@ -33,6 +38,7 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
       latitude
     );
   };
+  
 
   const handleFlyToParking = () => {
     if (selectedParking) {
@@ -77,7 +83,7 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
 
   return (
     <div>
-      <div className="m-4 bg-white p-4 rounded-lg border-2 border-gray-300 z-10">
+      <div className="my-4 bg-white p-4 rounded-lg border-2 border-gray-300 z-10">
         <div className="mb-4">
           <label htmlFor="isparkDropdown" className="mr-2">
             İspark Otoparkları:

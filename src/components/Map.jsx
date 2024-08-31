@@ -17,7 +17,6 @@ const Map = () => {
     setApiLocations,
     greenSpaces,
     setGreenSpaces,
-    activeMarkerType,
     setActiveMarkerType,
     isEditing,
     setIsEditing,
@@ -25,6 +24,9 @@ const Map = () => {
     setEditingMarker,
     formData,
     setFormData,
+    searchResult,
+    setSearchResult,
+    activeMarkerType,
   } = useContext(MapContext);
 
   const handleStyleChange = (styleUrl) => {
@@ -55,15 +57,19 @@ const Map = () => {
                 .setLngLat([longitude, latitude])
                 .addTo(mapRef.current);
 
-                const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-                  <p>${location._id ? `ID: ${location._id}` : 'ID: Unknown'}</p>
+              const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+                  <p>${location._id ? `ID: ${location._id}` : "ID: Unknown"}</p>
                   <p>Otopark</p>
                   <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
                   ${location.LOCATION_NAME || "Unknown"}<br/>
-                  <button onclick="handleEditClick('${location.PARK_NAME || ""}', '${location.LOCATION_NAME || ""}', 'ispark', ${longitude}, ${latitude}, '${location._id || ""}')" class="mt-2 px-4 py-2 bg-blue-400 text-white rounded hover:bg-blue-600">Edit</button>
+                  <button onclick="handleEditClick('${
+                    location.PARK_NAME || ""
+                  }', '${
+                location.LOCATION_NAME || ""
+              }', 'ispark', ${longitude}, ${latitude}, '${
+                location._id || ""
+              }')" class="mt-2 px-4 py-2 bg-blue-400 text-white rounded hover:bg-blue-600">Edit</button>
                 `);
-                
-
               marker.setPopup(popup);
               markers.current.push(marker);
             }
@@ -85,12 +91,18 @@ const Map = () => {
                 .setLngLat([longitude, latitude])
                 .addTo(mapRef.current);
 
-                const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-                  <p>${space._id ? `ID: ${space._id}` : 'ID: Unknown'}</p>
+              const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+                  <p>${space._id ? `ID: ${space._id}` : "ID: Unknown"}</p>
                   <p>Park veya Yeşil Alan</p>
                   <strong>${space["MAHAL ADI"] || "Unknown"}</strong><br/>
                   ${space.TUR || "Unknown"}<br/>
-                  <button onclick="handleEditClick('${space["MAHAL ADI"] || ""}', '${space.TUR || ""}', 'greenSpaces', ${longitude}, ${latitude}, '${space._id || ""}')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-green-600">Edit</button>
+                  <button onclick="handleEditClick('${
+                    space["MAHAL ADI"] || ""
+                  }', '${
+                space.TUR || ""
+              }', 'greenSpaces', ${longitude}, ${latitude}, '${
+                space._id || ""
+              }')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-green-600">Edit</button>
                 `);
 
               marker.setPopup(popup);
@@ -296,39 +308,53 @@ const Map = () => {
     };
   }, [mapStyle]);
 
-  // const searchLocation = async (query) => {
-  //   try {
-  //     const response = await axios.get(
-  //       `https://api.maptiler.com/geocoding/${encodeURIComponent(
-  //         query
-  //       )}.json?key=9HThlwugrS3kGNIjxi5r`
-  //     );
-  //     const coordinates = response.data.features[0].geometry.coordinates;
-  //     setSearchResult(coordinates);
-  //   } catch (error) {
-  //     console.error("Error fetching geocoding data:", error);
-  //   }
-  // };
+  // SEARCH BAR
+  const searchLocation = async (query) => {
+    try {
+      const response = await axios.get(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(
+          query
+        )}.json?key=9HThlwugrS3kGNIjxi5r`
+      );
+      const coordinates = response.data.features[0].geometry.coordinates;
+      setSearchResult(coordinates);
+    } catch (error) {
+      console.error("Error fetching geocoding data:", error);
+    }
+  };
+  useEffect(() => {
+    if (searchResult && mapRef.current) {
+      // Remove existing markers
+      markers.current.forEach((markerObj) => {
+        if (markerObj && markerObj.marker) {
+          markerObj.marker.remove(); // Ensure marker is removed from the map
+        }
+      });
+      markers.current = []; // Clear the markers array
 
-  // useEffect(() => {
-  //   if (searchResult && mapRef.current) {
-  //     markers.current.forEach((marker) => marker.remove());
-  //     markers.current = [];
+      // Fly to the new location
+      mapRef.current.flyTo({ center: searchResult, zoom: 14 });
 
-  //     mapRef.current.flyTo({ center: searchResult, zoom: 14 });
-  //     const newMarker = new maplibregl.Marker()
-  //       .setLngLat(searchResult)
-  //       .addTo(mapRef.current);
-  //     markers.current.push(newMarker);
-  //   }
-  // }, [searchResult]);
+      // Create and add new marker
+      const newMarker = new maplibregl.Marker()
+        .setLngLat(searchResult)
+        .addTo(mapRef.current);
+
+      // Store the new marker
+      markers.current.push({ marker: newMarker, type: "searchResult" });
+    }
+  }, [searchResult]);
 
   const showPopup = (name, description, type, longitude, latitude) => {
     const popupHTML = `
       <p>${type === "ispark" ? "Otopark" : "Park veya Yeşil Alan"}</p>
       <strong>${name || "Unknown"}</strong><br/>
       ${description || "Unknown"}<br/>
-      <button onclick="handleEditClick('${name || ""}', '${description || ""}', '${type || ""}', ${longitude || 0}, ${latitude || 0})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+      <button onclick="handleEditClick('${name || ""}', '${
+      description || ""
+    }', '${type || ""}', ${longitude || 0}, ${
+      latitude || 0
+    })" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
     `;
 
     const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupHTML);
@@ -336,11 +362,9 @@ const Map = () => {
       .setLngLat([longitude, latitude])
       .setPopup(popup)
       .addTo(mapRef.current);
-  
+
     markers.current.push(marker);
   };
-  
-  
 
   return (
     <div className="relative h-screen w-full">
@@ -349,6 +373,7 @@ const Map = () => {
       <Card
         onStyleChange={handleStyleChange}
         onShowMarkers={toggleMarkers}
+        searchLocation={searchLocation}
         markers={markers}
         mapRef={mapRef}
         formData={formData}

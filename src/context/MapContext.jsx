@@ -17,6 +17,7 @@ export const MapProvider = ({ children }) => {
   const [editingMarker, setEditingMarker] = useState(null);
   const [selectedParking, setSelectedParking] = useState(null);
   const [selectedGreenSpace, setSelectedGreenSpace] = useState(null);
+  const [markers, setMarkers] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -53,6 +54,8 @@ export const MapProvider = ({ children }) => {
         setSelectedParking,
         selectedGreenSpace,
         setSelectedGreenSpace,
+        markers,
+        setMarkers,
       }}
     >
       {children}
