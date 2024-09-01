@@ -63,10 +63,10 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
   const handleFlyToGreenSpace = () => {
     if (selectedGreenSpace) {
       const space = greenSpaces.find(
-        (sp) => sp["MAHAL ADI"] === selectedGreenSpace
+        (sp) => sp.MAHAL_ADI === selectedGreenSpace
       );
       if (space) {
-        const coordinates = space["KOORDINAT\n(Yatay , Dikey)"];
+        const coordinates = space["KOORDINAT"];
         if (coordinates) {
           const [latitude, longitude] = coordinates
             .split(",")
@@ -74,7 +74,7 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
 
           handleFlyToLocation(longitude, latitude);
           showPopup(
-            space["MAHAL ADI"],
+            space.MAHAL_ADI,
             space.TUR,
             "greenSpaces",
             longitude,
@@ -104,7 +104,7 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
               onChange={(e) => setSelectedParking(e.target.value)}
               className="w-full border border-gray-300 rounded p-2 my-2"
             >
-              <option>Seçiniz</option>
+              <option value={""} key={""} >Seçiniz</option>
               {apiLocations.map((loc) => (
                 <option key={loc.PARK_NAME} value={loc.PARK_NAME}>
                   {loc.PARK_NAME}
@@ -128,10 +128,10 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
               onChange={(e) => setSelectedGreenSpace(e.target.value)}
               className="w-full border border-gray-300 rounded p-2 my-2"
             >
-              <option>Seçiniz</option>
+              <option value={""} key={""} >Seçiniz</option>
               {greenSpaces.map((space) => (
-                <option key={space["MAHAL ADI"]} value={space["MAHAL ADI"]}>
-                  {space["MAHAL ADI"]}
+                <option key={space.MAHAL_ADI} value={space.MAHAL_ADI}>
+                  {space.MAHAL_ADI}
                 </option>
               ))}
             </select>

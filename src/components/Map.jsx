@@ -102,15 +102,17 @@ const Map = ({ location, setLocation }) => {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response1 = await axios.get(
-          "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=f4f56e58-5210-4f17-b852-effe356a890c"
-        );
-        setApiLocations(response1.data.result.records);
+        // const response1 = await axios.get(
+        //   "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=f4f56e58-5210-4f17-b852-effe356a890c"
+        // );
+        const response1 =  await axios.get("http://127.0.0.1:8000/GetAllParkData/")
+        setApiLocations(response1.data);
 
         const response2 = await axios.get(
-          "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=d588f256-2982-43d2-b372-c38978d7200b"
+          "http://127.0.0.1:8000/GetAllGreenFields/"
         );
-        setGreenSpaces(response2.data.result.records);
+        setGreenSpaces(response2.data);
+        console.log(response2.data, "baba meraba")
       } catch (error) {
         console.error("Error fetching API data:", error);
       }
@@ -168,7 +170,7 @@ const Map = ({ location, setLocation }) => {
         });
       } else if (type === "greenSpaces") {
         greenSpaces.forEach((space) => {
-          const coordinates = space["KOORDINAT\n(Yatay , Dikey)"];
+          const coordinates = space["KOORDINAT"];
           if (coordinates) {
             const [latitude, longitude] = coordinates
               .split(",")
@@ -183,12 +185,11 @@ const Map = ({ location, setLocation }) => {
                 .addTo(mapRef.current);
 
               const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-                <p>${space._id ? `ID: ${space._id}` : "ID: Unknown"}</p>
                 <p>Park veya Yeşil Alan</p>
-                <strong>${space["MAHAL ADI"] || "Unknown"}</strong><br/>
+                <strong>${space.MAHAL_ADI || "Unknown"}</strong><br/>
                 ${space.TUR || "Unknown"}<br/>
                 <button onclick="handleEditClick('${
-                  space["MAHAL ADI"] || ""
+                  space.MAHAL_ADI || ""
                 }', '${
                 space.TUR || ""
               }', 'greenSpaces', ${longitude}, ${latitude}, '${

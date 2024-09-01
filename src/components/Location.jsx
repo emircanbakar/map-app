@@ -43,10 +43,6 @@ const Location = ({ onLocationUpdate }) => { // Callback prop'unu ekleyin
   useEffect(() => {
     const savedPosition = localStorage.getItem("geolocation");
     if (savedPosition) {
-      console.log(
-        "LocalStorage'dan alınan konum verisi:",
-        JSON.parse(savedPosition)
-      );
       setPosition(JSON.parse(savedPosition));
     }
   }, []);

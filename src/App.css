@@ -4,5 +4,5 @@ html, body {
 }
 .map-container {
   width: 100%;
-  height: 100vh; /* Tüm görünüm alanı yüksekliği */
+  height: 100vh;
 }
