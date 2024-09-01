@@ -21,6 +21,7 @@ export const MapProvider = ({ children }) => {
   const [parkTypes, setParkTypes] = useState([]);
   const [distinctParkTypes, setDistinctParkTypes] = useState([]);
   const [selectedType, setSelectedType] = useState("");
+  const [locationUser, setLocationUser] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -65,6 +66,8 @@ export const MapProvider = ({ children }) => {
         setDistinctParkTypes,
         selectedType,
         setSelectedType,
+        locationUser,
+        setLocationUser,
       }}
     >
       {children}

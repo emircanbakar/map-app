@@ -5,10 +5,6 @@ const Location = ({ onLocationUpdate }) => { // Callback prop'unu ekleyin
   const [position, setPosition] = useState(() => {
     const savedPosition = localStorage.getItem("geolocation");
     if (savedPosition) {
-      console.log(
-        "LocalStorage'dan alınan konum verisi:",
-        JSON.parse(savedPosition)
-      );
       return JSON.parse(savedPosition);
     }
     return null;
@@ -28,10 +24,6 @@ const Location = ({ onLocationUpdate }) => { // Callback prop'unu ekleyin
           };
           setPosition(newPosition);
           localStorage.setItem("geolocation", JSON.stringify(newPosition));
-          console.log(
-            "Yeni konum verisi kaydedildi ve localStorage'a eklendi:",
-            newPosition
-          );
           setError(null);
           setIsFetching(false);
           onLocationUpdate(newPosition); // Konum bilgisini Map bileşenine gönder

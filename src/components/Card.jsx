@@ -15,7 +15,7 @@ const Card = ({
   showPopup,
   formData,
   searchLocation,
-  setLocation,
+  setLocation
 }) => {
   const {
     activeMarkerType,

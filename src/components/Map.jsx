@@ -5,9 +5,8 @@ import Card from "./Card";
 import axios from "axios";
 import PopUpSave from "./PopUpSave";
 import MapContext from "../context/MapContext";
-import Location from "./Location";
 
-const Map = ({ location,setLocation }) => {
+const Map = ({ location, setLocation }) => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markers = useRef([]);
@@ -35,6 +34,90 @@ const Map = ({ location,setLocation }) => {
   const handleStyleChange = (styleUrl) => {
     setMapStyle(styleUrl);
   };
+
+  //haritayı oluşturma ve 3d hale getirme, sağ tık ile döndürme, harita görünmü değişimi ve bu değişim sonrası temizleme işlemi
+  useEffect(() => {
+    if (!mapRef.current) {
+      mapRef.current = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: mapStyle,
+        center: [29.0784, 41.0882],
+        zoom: 10,
+        maxBounds: [
+          [26.0, 36.0],
+          [45.0, 42.0],
+        ],
+      });
+
+      mapRef.current.on("load", () => {
+        mapRef.current.addLayer({
+          id: "3d-buildings",
+          source: "openmaptiles",
+          "source-layer": "building",
+          filter: ["==", "extrude", "true"],
+          type: "fill-extrusion",
+          minzoom: 15,
+          paint: {
+            "fill-extrusion-height": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              15,
+              0,
+              15.05,
+              ["get", "height"],
+            ],
+            "fill-extrusion-base": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              15,
+              0,
+              15.05,
+              ["get", "min_height"],
+            ],
+            "fill-extrusion-opacity": 0.4,
+          },
+        });
+      });
+
+      mapRef.current.dragRotate.enable();
+      mapRef.current.on("contextmenu", () => {
+        mapRef.current.dragRotate.disable();
+        mapRef.current.dragRotate.enable({ mouseButton: "right" });
+      });
+    } else {
+      mapRef.current.setStyle(mapStyle);
+    }
+
+    // return () => {
+    //   if (mapRef.current) {
+    //     mapRef.current.remove();
+    //     mapRef.current = null;
+    //   }
+    // };
+  }, [mapStyle]);
+
+  //ibbden datayı çekme
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const response1 = await axios.get(
+          "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=f4f56e58-5210-4f17-b852-effe356a890c"
+        );
+        setApiLocations(response1.data.result.records);
+
+        const response2 = await axios.get(
+          "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=d588f256-2982-43d2-b372-c38978d7200b"
+        );
+        setGreenSpaces(response2.data.result.records);
+      } catch (error) {
+        console.error("Error fetching API data:", error);
+      }
+    };
+
+    fetchLocations();
+  }, []);
 
   const toggleMarkers = (type) => {
     //markerleri temizleme
@@ -123,7 +206,7 @@ const Map = ({ location,setLocation }) => {
   };
 
   useEffect(() => {
-    // Konum bilgisi geldiğinde marker ekleme işlemi
+    // Kullanıcı konum bilgisi geldiğinde marker ekleme işlemi
     if (location && mapRef.current) {
       const { lat, lng } = location;
 
@@ -142,28 +225,10 @@ const Map = ({ location,setLocation }) => {
 
       // Yeni markerı kaydet
       markers.current.push({ marker: newMarker, type: "geolocation" });
-
-      // Haritayı yeni marker'a "uçur"
       mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
-
-      // Son marker'ı referans olarak sakla
       lastMarker.current = newMarker;
     }
   }, [location]);
-
-  // edit onclicki için global metod, burda formdatadan gelen değişkenler setformdata ile değiştirilebilir hale gelip düzenleme modunu etkinleştirir.
-  window.handleEditClick = (
-    name,
-    description,
-    type,
-    longitude,
-    latitude,
-    _id
-  ) => {
-    setFormData({ name, description, longitude, latitude, type, _id });
-    setEditingMarker({ name, description, type, longitude, latitude });
-    setIsEditing(true);
-  };
 
   // dataibbye upsert atılmasa da güncelleme metodu
   const upsertIsparkData = async (data) => {
@@ -200,7 +265,6 @@ const Map = ({ location,setLocation }) => {
       return false;
     }
   };
-
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
@@ -258,138 +322,19 @@ const Map = ({ location,setLocation }) => {
     }
   };
 
-  //ibbden datayı çekme
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const response1 = await axios.get(
-          "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=f4f56e58-5210-4f17-b852-effe356a890c"
-        );
-        setApiLocations(response1.data.result.records);
-
-        const response2 = await axios.get(
-          "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=d588f256-2982-43d2-b372-c38978d7200b"
-        );
-        setGreenSpaces(response2.data.result.records);
-      } catch (error) {
-        console.error("Error fetching API data:", error);
-      }
-    };
-
-    fetchLocations();
-  }, []);
-
-  //haritayı oluşturma ve 3d hale getirme, sağ tık ile döndürme, harita görünmü değişimi ve bu değişim sonrası temizleme işlemi
-  useEffect(() => {
-    if (!mapRef.current) {
-      mapRef.current = new maplibregl.Map({
-        container: mapContainerRef.current,
-        style: mapStyle,
-        center: [29.0784, 41.0882],
-        zoom: 10,
-        maxBounds: [
-          [26.0, 36.0],
-          [45.0, 42.0],
-        ],
-      });
-
-      mapRef.current.on("load", () => {
-        mapRef.current.addLayer({
-          id: "3d-buildings",
-          source: "openmaptiles",
-          "source-layer": "building",
-          filter: ["==", "extrude", "true"],
-          type: "fill-extrusion",
-          minzoom: 15,
-          paint: {
-            "fill-extrusion-height": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              15,
-              0,
-              15.05,
-              ["get", "height"],
-            ],
-            "fill-extrusion-base": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              15,
-              0,
-              15.05,
-              ["get", "min_height"],
-            ],
-            "fill-extrusion-opacity": 0.4,
-          },
-        });
-      });
-
-      mapRef.current.dragRotate.enable();
-      mapRef.current.on("contextmenu", () => {
-        mapRef.current.dragRotate.disable();
-        mapRef.current.dragRotate.enable({ mouseButton: "right" });
-      });
-    } else {
-      mapRef.current.setStyle(mapStyle);
-    }
-
-    // return () => {
-    //   if (mapRef.current) {
-    //     mapRef.current.remove();
-    //     mapRef.current = null;
-    //   }
-    // };
-  }, [mapStyle]);
-
-  // SEARCH BAR
-  // maptiler geocoding ile arama işlemi yapma
-  const searchLocation = async (query) => {
-    try {
-      const response = await axios.get(
-        `https://api.maptiler.com/geocoding/${encodeURIComponent(
-          query
-        )}.json?key=9HThlwugrS3kGNIjxi5r`
-      );
-      const coordinates = response.data.features[0].geometry.coordinates;
-      setSearchResult(coordinates);
-    } catch (error) {
-      console.error("Error fetching geocoding data:", error);
-    }
+  // edit onclicki için global metod, burda formdatadan gelen değişkenler setformdata ile değiştirilebilir hale gelip düzenleme modunu etkinleştirir.
+  window.handleEditClick = (
+    name,
+    description,
+    type,
+    longitude,
+    latitude,
+    _id
+  ) => {
+    setFormData({ name, description, longitude, latitude, type, _id });
+    setEditingMarker({ name, description, type, longitude, latitude });
+    setIsEditing(true);
   };
-
-  useEffect(() => {
-    // Arama işlemi yapıldıktan sonra, önceki marker varsa kaldırılır ve yeni bulunan konuma marker eklenir
-    if (searchResult && mapRef.current) {
-      // Tüm eski marker'ları kaldır
-      markers.current.forEach((markerObj) => {
-        if (markerObj && markerObj.marker) {
-          markerObj.marker.remove();
-        }
-      });
-      markers.current = [];
-
-      // Eğer önceden eklenen bir marker varsa, onu da kaldır
-      if (lastMarker.current) {
-        lastMarker.current.remove();
-        lastMarker.current = null;
-      }
-
-      // Yeni konuma haritayı "uçur"
-      mapRef.current.flyTo({ center: searchResult, zoom: 14 });
-
-      // Yeni marker ekle
-      const newMarker = new maplibregl.Marker()
-        .setLngLat(searchResult)
-        .addTo(mapRef.current);
-
-      // Yeni markerı kaydet
-      markers.current.push({ marker: newMarker, type: "searchResult" });
-
-      // Son markerı referans olarak sakla
-      lastMarker.current = newMarker;
-    }
-  }, [searchResult]);
 
   const showPopup = (name, description, type, longitude, latitude) => {
     const popupHTML = `
@@ -412,6 +357,80 @@ const Map = ({ location,setLocation }) => {
     markers.current.push(marker);
   };
 
+  // search bar, maptiler geocoding ile arama işlemi yapma
+  const searchLocation = async (query) => {
+    try {
+      const response = await axios.get(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(
+          query
+        )}.json?key=9HThlwugrS3kGNIjxi5r`
+      );
+      const coordinates = response.data.features[0].geometry.coordinates;
+      setSearchResult(coordinates);
+    } catch (error) {
+      console.error("Error fetching geocoding data:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Arama işlemi yapıldıktan sonra, önceki marker varsa kaldırılır ve yeni bulunan konuma marker eklenir
+    if (searchResult && mapRef.current) {
+      markers.current.forEach((markerObj) => {
+        if (markerObj && markerObj.marker) {
+          markerObj.marker.remove();
+        }
+      });
+      markers.current = [];
+
+      // Eğer önceden eklenen bir marker varsa, onu da kaldır
+      if (lastMarker.current) {
+        lastMarker.current.remove();
+        lastMarker.current = null;
+      }
+
+      mapRef.current.flyTo({ center: searchResult, zoom: 14 });
+      const newMarker = new maplibregl.Marker()
+        .setLngLat(searchResult)
+        .addTo(mapRef.current);
+
+      // Yeni markerı kaydet
+      markers.current.push({ marker: newMarker, type: "searchResult" });
+
+      lastMarker.current = newMarker;
+    }
+  }, [searchResult]);
+
+
+  //harita üzerinde hareket edildikçe kordinat ve zoom bilgisi urlye eklenecek bu sayede url yönetimi sağlanacak
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const centerLat = params.get("lat");
+    const centerLng = params.get("lng");
+    const zoom = params.get("zoom");
+
+    if (centerLat && centerLng && zoom) {
+      mapRef.current.setCenter([parseFloat(centerLng), parseFloat(centerLat)]);
+      mapRef.current.setZoom(parseFloat(zoom));
+    }
+  }, []);
+
+  const handleMapMove = () => {
+    const { lng, lat } = mapRef.current.getCenter();
+    const zoom = mapRef.current.getZoom();
+    const url = new URL(window.location.href);
+    url.searchParams.set("lat", lat);
+    url.searchParams.set("lng", lng);
+    url.searchParams.set("zoom", zoom);
+    window.history.replaceState(null, "", url);
+  };
+
+  useEffect(() => {
+    mapRef.current.on("moveend", handleMapMove);
+    return () => {
+      mapRef.current.off("moveend", handleMapMove);
+    };
+  }, []);
+
   return (
     <div className="relative h-screen w-full">
       <div ref={mapContainerRef} className="w-full h-full" />
@@ -425,7 +444,6 @@ const Map = ({ location,setLocation }) => {
         showPopup={showPopup}
         setLocation={setLocation}
       />
-
 
       {isEditing && (
         <PopUpSave
