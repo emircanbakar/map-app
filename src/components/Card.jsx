@@ -5,6 +5,7 @@ import maplibregl from "maplibre-gl";
 import Filter from "./Filter";
 import ChangeMap from "./ChangeMap";
 import Search from "./Search";
+import Location from "./Location";
 
 const Card = ({
   onStyleChange,
@@ -14,6 +15,7 @@ const Card = ({
   showPopup,
   formData,
   searchLocation,
+  setLocation,
 }) => {
   const {
     activeMarkerType,
@@ -83,7 +85,6 @@ const Card = ({
       })
       .filter((markerObj) => markerObj !== null);
 
-    // Remove existing markers
     markers.current.forEach((markerObj) => {
       if (markerObj && markerObj.marker) {
         markerObj.marker.remove();
@@ -126,7 +127,7 @@ const Card = ({
               Yeşil Alanlar
             </button>
           </div>
-          <p>Otopark Çeşitleri</p>
+
           <Filter onFilter={handleFilter} />
 
           <Dropdown
@@ -136,7 +137,7 @@ const Card = ({
             formData={formData}
           />
 
-          <div className="relative inline-block text-left mt-4">
+          <div className="relative flex justify-between text-left mt-4">
             <button
               onClick={toggleDropdown}
               className="inline-flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-100 focus:outline-none transition-all"
@@ -158,51 +159,9 @@ const Card = ({
                 />
               </svg>
             </button>
-            {isOpen && (
-              <ChangeMap onStyleChange={onStyleChange} />
-              // <div className="absolute right-0 z-10 mt-2 w-auto bg-white border border-gray-300 rounded-md shadow-lg transition-all">
-              //   <button
-              //     onClick={() =>
-              //       onStyleChange(
-              //         "https://api.maptiler.com/maps/streets/style.json?key=9HThlwugrS3kGNIjxi5r"
-              //       )
-              //     }
-              //     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
-              //   >
-              //     Streets
-              //   </button>
-              //   <button
-              //     onClick={() =>
-              //       onStyleChange(
-              //         "https://api.maptiler.com/maps/streets-dark/style.json?key=9HThlwugrS3kGNIjxi5r"
-              //       )
-              //     }
-              //     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
-              //   >
-              //     Streets Dark
-              //   </button>
-              //   <button
-              //     onClick={() =>
-              //       onStyleChange(
-              //         "https://api.maptiler.com/maps/hybrid/style.json?key=9HThlwugrS3kGNIjxi5r"
-              //       )
-              //     }
-              //     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
-              //   >
-              //     Satellite Hybrid
-              //   </button>
-              //   <button
-              //     onClick={() =>
-              //       onStyleChange(
-              //         "https://api.maptiler.com/maps/topo-v2-dark/style.json?key=9HThlwugrS3kGNIjxi5r"
-              //       )
-              //     }
-              //     className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-600 hover:text-white transition-all"
-              //   >
-              //     Topo night
-              //   </button>
-              // </div>
-            )}
+            <Location onLocationUpdate={setLocation} />
+
+            {isOpen && <ChangeMap onStyleChange={onStyleChange} />}
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import React, { createContext, useState,  } from "react";
+import React, { createContext, useState } from "react";
 
 const MapContext = createContext();
 
@@ -18,6 +18,9 @@ export const MapProvider = ({ children }) => {
   const [selectedParking, setSelectedParking] = useState(null);
   const [selectedGreenSpace, setSelectedGreenSpace] = useState(null);
   const [markers, setMarkers] = useState([]);
+  const [parkTypes, setParkTypes] = useState([]);
+  const [distinctParkTypes, setDistinctParkTypes] = useState([]);
+  const [selectedType, setSelectedType] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -44,7 +47,7 @@ export const MapProvider = ({ children }) => {
         setEditingMarker,
         formData,
         setFormData,
-        details, 
+        details,
         setDetails,
         isOpen,
         setIsOpen,
@@ -56,6 +59,12 @@ export const MapProvider = ({ children }) => {
         setSelectedGreenSpace,
         markers,
         setMarkers,
+        parkTypes,
+        setParkTypes,
+        distinctParkTypes,
+        setDistinctParkTypes,
+        selectedType,
+        setSelectedType,
       }}
     >
       {children}

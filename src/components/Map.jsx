@@ -5,11 +5,13 @@ import Card from "./Card";
 import axios from "axios";
 import PopUpSave from "./PopUpSave";
 import MapContext from "../context/MapContext";
+import Location from "./Location";
 
-const Map = () => {
+const Map = ({ location,setLocation }) => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markers = useRef([]);
+  const lastMarker = useRef(null);
   const {
     mapStyle,
     setMapStyle,
@@ -29,23 +31,25 @@ const Map = () => {
     activeMarkerType,
   } = useContext(MapContext);
 
+  //harita görünümü değiştirme
   const handleStyleChange = (styleUrl) => {
     setMapStyle(styleUrl);
   };
 
   const toggleMarkers = (type) => {
+    //markerleri temizleme
     markers.current.forEach((markerObj) => {
       if (markerObj && markerObj.marker) {
-        markerObj.marker.remove(); 
+        markerObj.marker.remove();
       }
     });
-    markers.current = []; 
-
+    markers.current = [];
+    // eğer bir marker butonu açıksa üstüne tıklandığında tekrar kapatır (ispark ve yeşil alan butonu)
     if (activeMarkerType === type) {
       setActiveMarkerType(null);
     } else {
       setActiveMarkerType(type);
-
+      //apiloctan gelen long lat bilgileri geçerli mi kontrol edilip geçerliyse bir div olarak marker oluşturur
       if (type === "ispark") {
         apiLocations.forEach((location) => {
           if (location.LONGITUDE && location.LATITUDE) {
@@ -59,7 +63,7 @@ const Map = () => {
               const marker = new maplibregl.Marker(el)
                 .setLngLat([longitude, latitude])
                 .addTo(mapRef.current);
-
+              //popup eklenir
               const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
                 <p>${location._id ? `ID: ${location._id}` : "ID: Unknown"}</p>
                 <p>Otopark</p>
@@ -75,7 +79,7 @@ const Map = () => {
               `);
 
               marker.setPopup(popup);
-              markers.current.push({ marker, type: "ispark" }); // Store the marker correctly
+              markers.current.push({ marker, type: "ispark" });
             }
           }
         });
@@ -110,7 +114,7 @@ const Map = () => {
               `);
 
               marker.setPopup(popup);
-              markers.current.push({ marker, type: "greenSpaces" }); // Store the marker correctly
+              markers.current.push({ marker, type: "greenSpaces" });
             }
           }
         });
@@ -118,6 +122,36 @@ const Map = () => {
     }
   };
 
+  useEffect(() => {
+    // Konum bilgisi geldiğinde marker ekleme işlemi
+    if (location && mapRef.current) {
+      const { lat, lng } = location;
+
+      // Eski marker'ları kaldırma
+      markers.current.forEach((markerObj) => {
+        if (markerObj && markerObj.marker) {
+          markerObj.marker.remove();
+        }
+      });
+      markers.current = [];
+
+      // Yeni marker ekle
+      const newMarker = new maplibregl.Marker()
+        .setLngLat([lng, lat])
+        .addTo(mapRef.current);
+
+      // Yeni markerı kaydet
+      markers.current.push({ marker: newMarker, type: "geolocation" });
+
+      // Haritayı yeni marker'a "uçur"
+      mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
+
+      // Son marker'ı referans olarak sakla
+      lastMarker.current = newMarker;
+    }
+  }, [location]);
+
+  // edit onclicki için global metod, burda formdatadan gelen değişkenler setformdata ile değiştirilebilir hale gelip düzenleme modunu etkinleştirir.
   window.handleEditClick = (
     name,
     description,
@@ -131,6 +165,7 @@ const Map = () => {
     setIsEditing(true);
   };
 
+  // dataibbye upsert atılmasa da güncelleme metodu
   const upsertIsparkData = async (data) => {
     try {
       const response = await axios.post(
@@ -202,7 +237,7 @@ const Map = () => {
 
       if (isparkSuccess || greenSpacesSuccess) {
         console.log("Data updated successfully");
-
+        // güncellenen popup
         const updatedPopupHTML = `
           <p>Düzenlenmiş Konum</p>
           <strong>${formData.name || "No Name"}</strong><br/>
@@ -223,6 +258,7 @@ const Map = () => {
     }
   };
 
+  //ibbden datayı çekme
   useEffect(() => {
     const fetchLocations = async () => {
       try {
@@ -243,6 +279,7 @@ const Map = () => {
     fetchLocations();
   }, []);
 
+  //haritayı oluşturma ve 3d hale getirme, sağ tık ile döndürme, harita görünmü değişimi ve bu değişim sonrası temizleme işlemi
   useEffect(() => {
     if (!mapRef.current) {
       mapRef.current = new maplibregl.Map({
@@ -297,15 +334,16 @@ const Map = () => {
       mapRef.current.setStyle(mapStyle);
     }
 
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
+    // return () => {
+    //   if (mapRef.current) {
+    //     mapRef.current.remove();
+    //     mapRef.current = null;
+    //   }
+    // };
   }, [mapStyle]);
 
   // SEARCH BAR
+  // maptiler geocoding ile arama işlemi yapma
   const searchLocation = async (query) => {
     try {
       const response = await axios.get(
@@ -319,26 +357,37 @@ const Map = () => {
       console.error("Error fetching geocoding data:", error);
     }
   };
+
   useEffect(() => {
+    // Arama işlemi yapıldıktan sonra, önceki marker varsa kaldırılır ve yeni bulunan konuma marker eklenir
     if (searchResult && mapRef.current) {
-      // Remove existing markers
+      // Tüm eski marker'ları kaldır
       markers.current.forEach((markerObj) => {
         if (markerObj && markerObj.marker) {
-          markerObj.marker.remove(); // Ensure marker is removed from the map
+          markerObj.marker.remove();
         }
       });
-      markers.current = []; // Clear the markers array
+      markers.current = [];
 
-      // Fly to the new location
+      // Eğer önceden eklenen bir marker varsa, onu da kaldır
+      if (lastMarker.current) {
+        lastMarker.current.remove();
+        lastMarker.current = null;
+      }
+
+      // Yeni konuma haritayı "uçur"
       mapRef.current.flyTo({ center: searchResult, zoom: 14 });
 
-      // Create and add new marker
+      // Yeni marker ekle
       const newMarker = new maplibregl.Marker()
         .setLngLat(searchResult)
         .addTo(mapRef.current);
 
-      // Store the new marker
+      // Yeni markerı kaydet
       markers.current.push({ marker: newMarker, type: "searchResult" });
+
+      // Son markerı referans olarak sakla
+      lastMarker.current = newMarker;
     }
   }, [searchResult]);
 
@@ -366,7 +415,6 @@ const Map = () => {
   return (
     <div className="relative h-screen w-full">
       <div ref={mapContainerRef} className="w-full h-full" />
-
       <Card
         onStyleChange={handleStyleChange}
         onShowMarkers={toggleMarkers}
@@ -375,7 +423,9 @@ const Map = () => {
         mapRef={mapRef}
         formData={formData}
         showPopup={showPopup}
+        setLocation={setLocation}
       />
+
 
       {isEditing && (
         <PopUpSave
