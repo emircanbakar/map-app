@@ -27,6 +27,14 @@ export const MapProvider = ({ children }) => {
     description: "",
     type: "",
     _id: "",
+    longitude: "",
+    latitude: "",
+    ilce: "",
+    koordinat: "",
+    saat: "",
+    kapasite: "",
+    county: "",
+    type_desc: "",
   });
 
   return (

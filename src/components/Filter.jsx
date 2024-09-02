@@ -12,6 +12,7 @@ const Filter = ({ onFilter }) => {
     setSelectedType,
   } = useContext(MapContext);
 
+  // API'den gelen park verilerini filtrelemek için özel hook
   useEffect(() => {
     const uniqueTypes = Array.from(
       new Set(parkTypes.map((type) => type.PARK_TYPE_ID))
@@ -22,12 +23,10 @@ const Filter = ({ onFilter }) => {
   useEffect(() => {
     const fetchParkTypes = async () => {
       try {
-        const response = await axios.get(
-          "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=f4f56e58-5210-4f17-b852-effe356a890c"
-        );
+        const response = await axios.get("http://127.0.0.1:8000/GetAllParkData/");
         const data = response.data;
-        if (data.success && data.result && Array.isArray(data.result.records)) {
-          setParkTypes(data.result.records);
+        if (Array.isArray(data)) {  // Gelen veri bir array ise park verilerini ayarla
+          setParkTypes(data);
         } else {
           console.error("Expected an array of park types but got:", data);
         }
@@ -45,7 +44,7 @@ const Filter = ({ onFilter }) => {
   };
 
   const handleFilter = () => {
-    onFilter(selectedType);
+    onFilter(selectedType);  // Seçili park tipini filtrelemek için fonksiyon çağrısı
   };
 
   return (
@@ -67,7 +66,7 @@ const Filter = ({ onFilter }) => {
 
         <button
           className="m-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all"
-          onClick={() => handleFilter("ispark")}
+          onClick={handleFilter}  // Butonun onclick olayında doğrudan filtrele fonksiyonunu çağır
         >
           Filtrele
         </button>

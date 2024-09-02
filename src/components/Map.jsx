@@ -90,6 +90,7 @@ const Map = ({ location, setLocation }) => {
       mapRef.current.setStyle(mapStyle);
     }
 
+    // stil değiştiğinde markerleri siler
     // return () => {
     //   if (mapRef.current) {
     //     mapRef.current.remove();
@@ -105,14 +106,17 @@ const Map = ({ location, setLocation }) => {
         // const response1 = await axios.get(
         //   "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=f4f56e58-5210-4f17-b852-effe356a890c"
         // );
-        const response1 =  await axios.get("http://127.0.0.1:8000/GetAllParkData/")
+        const response1 = await axios.get(
+          "http://127.0.0.1:8000/GetAllParkData/"
+        );
+        console.log(response1.data); // Debug log
         setApiLocations(response1.data);
 
         const response2 = await axios.get(
           "http://127.0.0.1:8000/GetAllGreenFields/"
         );
+        console.log(response2.data); // Debug log
         setGreenSpaces(response2.data);
-        console.log(response2.data, "baba meraba")
       } catch (error) {
         console.error("Error fetching API data:", error);
       }
@@ -150,7 +154,7 @@ const Map = ({ location, setLocation }) => {
                 .addTo(mapRef.current);
               //popup eklenir
               const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-                <p>${location._id ? `ID: ${location._id}` : "ID: Unknown"}</p>
+                <p>${location._id}</p>
                 <p>Otopark</p>
                 <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
                 ${location.LOCATION_NAME || "Unknown"}<br/>
@@ -185,12 +189,11 @@ const Map = ({ location, setLocation }) => {
                 .addTo(mapRef.current);
 
               const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+                <p> ${space._id} </p>
                 <p>Park veya Yeşil Alan</p>
                 <strong>${space.MAHAL_ADI || "Unknown"}</strong><br/>
                 ${space.TUR || "Unknown"}<br/>
-                <button onclick="handleEditClick('${
-                  space.MAHAL_ADI || ""
-                }', '${
+                <button onclick="handleEditClick('${space.MAHAL_ADI || ""}', '${
                 space.TUR || ""
               }', 'greenSpaces', ${longitude}, ${latitude}, '${
                 space._id || ""
@@ -232,86 +235,74 @@ const Map = ({ location, setLocation }) => {
   }, [location]);
 
   // dataibbye upsert atılmasa da güncelleme metodu
-  const upsertIsparkData = async (data) => {
+  const upsertIsparkData = async (data, id) => {
     try {
       const response = await axios.post(
-        "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
-        data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        `http://127.0.0.1:8000/UpdateParkData/${id}`,
+        data
       );
-      return response.data.success;
+      return response.data;
     } catch (error) {
-      console.error("Error updating İspark data:", error);
+      console.error("Error updating data:", error);
       return false;
     }
   };
-  const upsertGreenSpacesData = async (data) => {
+  const upsertGreenSpacesData = async (data, id) => {
     try {
       const response = await axios.post(
-        "https://data.ibb.gov.tr/api/3/action/datastore_upsert",
-        data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        `http://127.0.0.1:8000/UpdateGreenFields/${id}`,
+        data
       );
-      return response.data.success;
+      return response.data;
     } catch (error) {
       console.error("Error updating Green Spaces data:", error);
       return false;
     }
   };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-
     if (editingMarker) {
       let isparkSuccess = false;
       let greenSpacesSuccess = false;
 
       if (formData.type === "ispark") {
         const dataForIspark = {
-          resource_id: "f4f56e58-5210-4f17-b852-effe356a890c",
-          id: formData._id,
-          records: [
-            {
-              PARK_NAME: formData.name || "",
-              LOCATION_NAME: formData.description || "",
-            },
-          ],
+          PARK_NAME: formData.name || "",
+          LOCATION_NAME: formData.description || "",
+          PARK_TYPE_ID: formData.type || "",
+          PARK_TYPE_DESC: formData.type_desc || "",
+          CAPACITY_OF_PARK: formData.kapasite || "",
+          WORKING_TIME: formData.saat || "",
+          COUNTY_NAME: formData.county || "",
+          LONGITUDE: formData.longitude || "",
+          LATITUDE: formData.latitude || "",
         };
-        isparkSuccess = await upsertIsparkData(dataForIspark);
+        isparkSuccess = await upsertIsparkData(dataForIspark, formData._id);
       }
 
       if (formData.type === "greenSpaces") {
         const dataForGreenSpaces = {
-          resource_id: "d588f256-2982-43d2-b372-c38978d7200b",
-          records: [
-            {
-              MAHAL_ADI: formData.name || "",
-              TUR: formData.description || "",
-            },
-          ],
+          TUR: formData.description || "",
+          MAHAL_ADI: formData.name || "",
+          ILCE: formData.ilce || "",
+          KOORDINAT: formData.koordinat || "",
         };
-        greenSpacesSuccess = await upsertGreenSpacesData(dataForGreenSpaces);
+        greenSpacesSuccess = await upsertGreenSpacesData(
+          dataForGreenSpaces,
+          formData._id
+        );
       }
 
       if (isparkSuccess || greenSpacesSuccess) {
-        console.log("Data updated successfully");
-        // güncellenen popup
         const updatedPopupHTML = `
           <p>Düzenlenmiş Konum</p>
           <strong>${formData.name || "No Name"}</strong><br/>
-          ${formData.description || "No Description"}</br>
+          ${formData.description || "No Description"}<br/>
+          ${formData.type || "No Type"}<br/>
           <button onclick="handleEditClick('${formData.name || ""}', '${
           formData.description || ""
-        }', '${formData.type || ""}', ${formData.longitude || 0}, ${
-          formData.latitude || 0
-        })" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+        }', '${formData.type || ""} <button> class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
         `;
         editingMarker.setPopup(
           new maplibregl.Popup({ offset: 25 }).setHTML(updatedPopupHTML)
@@ -330,11 +321,39 @@ const Map = ({ location, setLocation }) => {
     type,
     longitude,
     latitude,
-    _id
+    _id,
+    ilce,
+    koordinat,
+    saat,
+    kapasite,
+    county,
+    type_desc
   ) => {
-    setFormData({ name, description, longitude, latitude, type, _id });
-    setEditingMarker({ name, description, type, longitude, latitude });
-    setIsEditing(true);
+    console.log('_id:', _id); // 
+    const marker = markers.current.find(
+      (m) =>
+        m.marker.getLngLat().toArray().join(",") ===
+        [longitude, latitude].join(",")
+    );
+
+    if (marker) {
+      setFormData({
+        name,
+        description,
+        longitude,
+        latitude,
+        type,
+        _id,
+        koordinat,
+        ilce,
+        saat,
+        kapasite,
+        county,
+        type_desc,
+      });
+      setEditingMarker(marker.marker); // Burada doğrudan marker'ı ayarlıyoruz
+      setIsEditing(true);
+    }
   };
 
   const showPopup = (name, description, type, longitude, latitude) => {
@@ -344,8 +363,8 @@ const Map = ({ location, setLocation }) => {
       ${description || "Unknown"}<br/>
       <button onclick="handleEditClick('${name || ""}', '${
       description || ""
-    }', '${type || ""}', ${longitude || 0}, ${
-      latitude || 0
+    }', '${type || ""}', ${longitude || ""}, ${
+      latitude || ""
     })" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
     `;
 
@@ -400,7 +419,6 @@ const Map = ({ location, setLocation }) => {
       lastMarker.current = newMarker;
     }
   }, [searchResult]);
-
 
   //harita üzerinde hareket edildikçe kordinat ve zoom bilgisi urlye eklenecek bu sayede url yönetimi sağlanacak
   useEffect(() => {

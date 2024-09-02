@@ -2,8 +2,20 @@ import uvicorn
 from fastapi import FastAPI,HTTPException
 from pymongo import MongoClient
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+origins = [
+    "*",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # MongoDB bağlantı bilgileri
 client = MongoClient('mongodb://localhost:27017')
@@ -12,7 +24,6 @@ collection = db['isparkvar']
 collection2 = db['yesilalanvar']
 
 class Park(BaseModel):
-    _id: int
     PARK_NAME: str
     LOCATION_NAME: str
     PARK_TYPE_ID: str
@@ -24,7 +35,6 @@ class Park(BaseModel):
     LATITUDE: float
 
 class GreenField(BaseModel):
-    _id: int
     TUR: str
     MAHAL_ADI: str
     ILCE: str
@@ -53,7 +63,7 @@ def get_park(park_id: str):
 @app.post("/UpdateParkData/{park_id}")
 def update_park(park_id: str, park: Park):
     result = collection.update_one(
-        {"_id": park_id},
+        {"_id": int(park_id)},
         {"$set": park.model_dump()},
         upsert=True
     )
@@ -68,7 +78,6 @@ def get_all_park():
     if documents:
         park_list = [
             {
-                "_id": doc.get("_id"),
                 "PARK_NAME": doc.get("PARK_NAME"),
                 "LOCATION_NAME": doc.get("LOCATION_NAME"),
                 "PARK_TYPE_ID": doc.get("PARK_TYPE_ID"),
@@ -119,14 +128,15 @@ def get_all_green_fields():
         raise HTTPException(status_code=404, detail="No parks found")
 
 @app.post("/UpdateGreenFields/{green_id}")
-def update_park(green_id: str, greenField: GreenField):
+def update_greenField(green_id: str, greenField: GreenField):
+
     result = collection2.update_one(
-        {"_id": green_id},
-        {"$set": GreenField.model_dump()},
+        {"_id": int(green_id)},
+        {"$set": greenField.model_dump()},
         upsert=True
     )
     if result.modified_count > 0 or result.upserted_id:
-        return GreenField
+        return greenField
     else:
         raise HTTPException(status_code=400, detail="Failed to update Green Field")
 
