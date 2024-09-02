@@ -12,31 +12,67 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
     setSelectedParking,
   } = useContext(MapContext);
 
-  const addMarkerToLocation = (longitude, latitude) => {
+  const addParkingMarker = (longitude, latitude, name, description, parkTypeId, capacity, workingTime, county) => {
     // Mevcut markerları temizle
     markers.current.forEach((markerObj) => {
       if (markerObj && markerObj.marker) {
-        markerObj.marker.remove(); // Ensure marker is removed from the map
+        markerObj.marker.remove();
       }
     });
-    markers.current = []; // Clear the markers array
+    markers.current = []; // Marker dizisini temizle
 
     // Yeni marker oluştur
     const newMarker = new maplibregl.Marker()
       .setLngLat([longitude, latitude])
       .addTo(mapRef.current);
 
+    // Yeni popup oluştur ve marker'e ekle
+    const popup = new maplibregl.Popup({ offset: 25 })
+      .setHTML(
+        `<h3>${name}</h3>
+         <p>${description}</p>
+         <p>Park Type ID: ${parkTypeId}</p>
+         <p>Capacity: ${capacity}</p>
+         <p>Working Time: ${workingTime}</p>
+         <p>County: ${county}</p>`
+      )
+      .setLngLat([longitude, latitude])
+      .addTo(mapRef.current);
+
+    newMarker.setPopup(popup).togglePopup();
+
     // Marker'ı diziye ekle
     markers.current.push({ marker: newMarker, type: "custom" });
+  };
 
-    // Popup göster
-    showPopup(
-      formData.name,
-      formData.description,
-      formData.type,
-      longitude,
-      latitude
-    );
+  const addGreenSpaceMarker = (longitude, latitude, name, type, ilce) => {
+    // Mevcut markerları temizle
+    markers.current.forEach((markerObj) => {
+      if (markerObj && markerObj.marker) {
+        markerObj.marker.remove();
+      }
+    });
+    markers.current = []; // Marker dizisini temizle
+
+    // Yeni marker oluştur
+    const newMarker = new maplibregl.Marker()
+      .setLngLat([longitude, latitude])
+      .addTo(mapRef.current);
+
+    // Yeni popup oluştur ve marker'e ekle
+    const popup = new maplibregl.Popup({ offset: 25 })
+      .setHTML(
+        `<h3>${name}</h3>
+         <p>Tür: ${type}</p>
+         <p>ilçe: ${ilce}</p>`
+      )
+      .setLngLat([longitude, latitude])
+      .addTo(mapRef.current);
+
+    newMarker.setPopup(popup).togglePopup();
+
+    // Marker'ı diziye ekle
+    markers.current.push({ marker: newMarker, type: "custom" });
   };
 
   const handleFlyToParking = () => {
@@ -49,13 +85,16 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
         const latitude = parseFloat(location.LATITUDE);
 
         handleFlyToLocation(longitude, latitude);
-        showPopup(
+        addParkingMarker(
+          longitude,
+          latitude,
           location.PARK_NAME,
           location.LOCATION_NAME,
-          "ispark",
-          longitude,
-          latitude
-        ); // Popup'ı göster
+          location.PARK_TYPE_ID,
+          location.CAPACITY_OF_PARK,
+          location.WORKING_TIME,
+          location.COUNTY_NAME
+        );
       }
     }
   };
@@ -73,13 +112,13 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
             .map((coord) => parseFloat(coord.trim()));
 
           handleFlyToLocation(longitude, latitude);
-          showPopup(
+          addGreenSpaceMarker(
+            longitude,
+            latitude,
             space.MAHAL_ADI,
             space.TUR,
-            "greenSpaces",
-            longitude,
-            latitude
-          ); // Popup'ı göster
+            space.ILCE
+          );
         }
       }
     }
@@ -88,7 +127,6 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
   const handleFlyToLocation = (longitude, latitude) => {
     if (mapRef.current) {
       mapRef.current.flyTo({ center: [longitude, latitude], zoom: 18 });
-      addMarkerToLocation(longitude, latitude);
     }
   };
 
@@ -104,7 +142,9 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
               onChange={(e) => setSelectedParking(e.target.value)}
               className="w-full border border-gray-300 rounded p-2 my-2"
             >
-              <option value={""} key={""} >Seçiniz</option>
+              <option value={""} key={""}>
+                Seçiniz
+              </option>
               {apiLocations.map((loc) => (
                 <option key={loc.PARK_NAME} value={loc.PARK_NAME}>
                   {loc.PARK_NAME}
@@ -128,7 +168,9 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
               onChange={(e) => setSelectedGreenSpace(e.target.value)}
               className="w-full border border-gray-300 rounded p-2 my-2"
             >
-              <option value={""} key={""} >Seçiniz</option>
+              <option value={""} key={""}>
+                Seçiniz
+              </option>
               {greenSpaces.map((space) => (
                 <option key={space.MAHAL_ADI} value={space.MAHAL_ADI}>
                   {space.MAHAL_ADI}

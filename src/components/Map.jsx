@@ -156,6 +156,10 @@ const Map = ({ location, setLocation }) => {
                 <p>Otopark</p>
                 <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
                 ${location.LOCATION_NAME || "Unknown"}<br/>
+                ${location.PARK_TYPE_ID || "Unknown"}<br/>
+                ${location.CAPACITY_OF_PARK || "Unknown"}<br/>
+                ${location.WORKING_TIME || "Unknown"}<br/>
+                ${location.COUNTY_NAME || "Unknown"}<br/>
                 <button onclick="handleEditClick(
                 '${location._id || ""}',
                 '${location.PARK_NAME || ""}', 
@@ -196,7 +200,6 @@ const Map = ({ location, setLocation }) => {
                 <p>Park veya Yeşil Alan</p>
                 <strong>${space.MAHAL_ADI || "Unknown"}</strong><br/>
                 ${space.TUR || "Unknown"}<br/>
-                ${space.KOORDINAT || "Unknown"}<br/>
                 ${space.ILCE} <br/>
                 <button onclick="handleEditClickGreen(
                 '${space._id}', 
@@ -311,7 +314,11 @@ const Map = ({ location, setLocation }) => {
           <p>Düzenlenmiş Konum</p>
           <strong>${formData.name || "No Name"}</strong><br/>
           ${formData.description || "No Description"}<br/>
-          ${formData.type || "No Type"}<br/> `;
+          ${formData.type ? formData.type : ""}<br/>
+          ${formData.ilce ? formData.ilce : ""}<br/>
+          ${formData.saat ? formData.saat : ""}<br/>
+          ${formData.kapasite ? formData.kapasite : ""}<br/>
+          ${formData.county ? formData.county : ""}<br/>`;
         editingMarker.setPopup(
           new maplibregl.Popup({ offset: 25 }).setHTML(updatedPopupHTML)
         );

@@ -15,7 +15,6 @@ const PopUpSave = ({ formData, setFormData, setIsEditing, handleFormSubmit }) =>
         <form onSubmit={handleFormSubmit}>
           <div>
             <label>
-              İsim:
               <input
                 type="text"
                 name="name"
@@ -27,7 +26,6 @@ const PopUpSave = ({ formData, setFormData, setIsEditing, handleFormSubmit }) =>
           </div>
           <div>
             <label>
-              Açıklama:
               <input
                 type="text"
                 name="description"
