@@ -1,7 +1,6 @@
 import React from "react";
 
-const PopUpSave = ({formData, setFormData, setIsEditing, handleFormSubmit}) => {
-
+const PopUpSave = ({ formData, setFormData, setIsEditing, handleFormSubmit }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -12,8 +11,7 @@ const PopUpSave = ({formData, setFormData, setIsEditing, handleFormSubmit}) => {
 
   return (
     <div>
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 p-4 bg-white rounded-lg shadow-md"
-      >
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 p-4 bg-white rounded-lg shadow-md">
         <form onSubmit={handleFormSubmit}>
           <div>
             <label>

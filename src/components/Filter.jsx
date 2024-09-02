@@ -47,6 +47,11 @@ const Filter = ({ onFilter }) => {
     onFilter(selectedType);  // Seçili park tipini filtrelemek için fonksiyon çağrısı
   };
 
+  const handleClearFilter = () => {
+    setSelectedType(""); // Filtreyi temizle
+    onFilter(""); // Filtreleme işlevini tüm park türlerini gösterecek şekilde çağır
+  };
+
   return (
     <div>
       <p className="mt-2">Otopark Çeşitleri</p>
@@ -64,12 +69,21 @@ const Filter = ({ onFilter }) => {
           ))}
         </select>
 
-        <button
-          className="m-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all"
-          onClick={handleFilter}  // Butonun onclick olayında doğrudan filtrele fonksiyonunu çağır
-        >
-          Filtrele
-        </button>
+        <div className="flex">
+          <button
+            className="m-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all"
+            onClick={handleFilter}  // Filtreleme butonu
+          >
+            Filtrele
+          </button>
+
+          <button
+            className="my-2 bg-red-500 text-white px-4 rounded-md hover:bg-red-600 transition-all"
+            onClick={handleClearFilter}  // Filtreyi temizleme butonu
+          >
+            X
+          </button>
+        </div>
       </div>
     </div>
   );

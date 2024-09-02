@@ -10,7 +10,7 @@ function App() {
   return (
     <MapProvider>
       <div className="App">
-        {/* <DataPanel /> */}
+        <DataPanel />
         <Card />
         <Map location={location} setLocation={setLocation} />
       </div>

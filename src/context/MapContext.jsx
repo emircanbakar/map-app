@@ -35,6 +35,7 @@ export const MapProvider = ({ children }) => {
     kapasite: "",
     county: "",
     type_desc: "",
+    fieldType: "",
   });
 
   return (

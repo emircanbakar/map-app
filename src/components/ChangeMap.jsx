@@ -2,7 +2,7 @@ import React from "react";
 
 const ChangeMap = ({ onStyleChange }) => {
   return (
-    <div className="absolute left-0 z-10 mt-2 flex w-auto bg-white border border-gray-300 rounded-md shadow-lg transition-all">
+    <div className="absolute left-0 z-10 mt-12 flex w-auto bg-white border border-gray-300 rounded-md shadow-lg transition-all">
       <button
         onClick={() =>
           onStyleChange(

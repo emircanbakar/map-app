@@ -109,13 +109,11 @@ const Map = ({ location, setLocation }) => {
         const response1 = await axios.get(
           "http://127.0.0.1:8000/GetAllParkData/"
         );
-        console.log(response1.data); // Debug log
         setApiLocations(response1.data);
 
         const response2 = await axios.get(
           "http://127.0.0.1:8000/GetAllGreenFields/"
         );
-        console.log(response2.data); // Debug log
         setGreenSpaces(response2.data);
       } catch (error) {
         console.error("Error fetching API data:", error);
@@ -158,13 +156,18 @@ const Map = ({ location, setLocation }) => {
                 <p>Otopark</p>
                 <strong>${location.PARK_NAME || "Unknown"}</strong><br/>
                 ${location.LOCATION_NAME || "Unknown"}<br/>
-                <button onclick="handleEditClick('${
-                  location.PARK_NAME || ""
-                }', '${
-                location.LOCATION_NAME || ""
-              }', 'ispark', ${longitude}, ${latitude}, '${
-                location._id || ""
-              }')" class="mt-2 px-4 py-2 bg-blue-400 text-white rounded hover:bg-blue-600">Edit</button>
+                <button onclick="handleEditClick(
+                '${location._id || ""}',
+                '${location.PARK_NAME || ""}', 
+                '${location.LOCATION_NAME || ""}', 
+                '${location.PARK_TYPE_ID || ""}', 
+                '${location.PARK_TYPE_DESC || ""}', 
+                '${location.CAPACITY_OF_PARK || ""}', 
+                '${location.WORKING_TIME || ""}', 
+                '${location.COUNTY_NAME || ""}', 
+                '${longitude}', 
+                '${latitude}',
+                )" class="mt-2 px-4 py-2 bg-blue-400 text-white rounded hover:bg-blue-600">Edit</button>
               `);
 
               marker.setPopup(popup);
@@ -193,11 +196,17 @@ const Map = ({ location, setLocation }) => {
                 <p>Park veya Yeşil Alan</p>
                 <strong>${space.MAHAL_ADI || "Unknown"}</strong><br/>
                 ${space.TUR || "Unknown"}<br/>
-                <button onclick="handleEditClick('${space.MAHAL_ADI || ""}', '${
-                space.TUR || ""
-              }', 'greenSpaces', ${longitude}, ${latitude}, '${
-                space._id || ""
-              }')" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-green-600">Edit</button>
+                ${space.KOORDINAT || "Unknown"}<br/>
+                ${space.ILCE} <br/>
+                <button onclick="handleEditClickGreen(
+                '${space._id}', 
+                '${space.MAHAL_ADI || ""}', 
+                '${space.TUR || ""}', 
+                '${space.ILCE}',
+                '${space.KOORDINAT}',
+                '${longitude}',
+                '${latitude}'
+                )" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-green-600">Edit</button>
               `);
 
               marker.setPopup(popup);
@@ -237,11 +246,11 @@ const Map = ({ location, setLocation }) => {
   // dataibbye upsert atılmasa da güncelleme metodu
   const upsertIsparkData = async (data, id) => {
     try {
-      const response = await axios.post(
+      const response1 = await axios.post(
         `http://127.0.0.1:8000/UpdateParkData/${id}`,
         data
       );
-      return response.data;
+      return response1.data;
     } catch (error) {
       console.error("Error updating data:", error);
       return false;
@@ -249,11 +258,11 @@ const Map = ({ location, setLocation }) => {
   };
   const upsertGreenSpacesData = async (data, id) => {
     try {
-      const response = await axios.post(
+      const response2 = await axios.post(
         `http://127.0.0.1:8000/UpdateGreenFields/${id}`,
         data
       );
-      return response.data;
+      return response2.data;
     } catch (error) {
       console.error("Error updating Green Spaces data:", error);
       return false;
@@ -262,48 +271,47 @@ const Map = ({ location, setLocation }) => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    console.log("Form Data on Submit: ", formData); // Konsola form verisini yazdır
+
     if (editingMarker) {
       let isparkSuccess = false;
       let greenSpacesSuccess = false;
-
-      if (formData.type === "ispark") {
+      if (formData.fieldType === "ispark") {
         const dataForIspark = {
+          _id: formData._id,
           PARK_NAME: formData.name || "",
           LOCATION_NAME: formData.description || "",
           PARK_TYPE_ID: formData.type || "",
           PARK_TYPE_DESC: formData.type_desc || "",
-          CAPACITY_OF_PARK: formData.kapasite || "",
+          CAPACITY_OF_PARK: Number(formData.kapasite) || "",
           WORKING_TIME: formData.saat || "",
           COUNTY_NAME: formData.county || "",
-          LONGITUDE: formData.longitude || "",
-          LATITUDE: formData.latitude || "",
+          LONGITUDE: parseFloat(formData.longitude) || "",
+          LATITUDE: parseFloat(formData.latitude) || "",
         };
+        console.log("ispark data formdata", dataForIspark);
         isparkSuccess = await upsertIsparkData(dataForIspark, formData._id);
       }
 
-      if (formData.type === "greenSpaces") {
+      if (formData.fieldType === "greenSpaces") {
         const dataForGreenSpaces = {
           TUR: formData.description || "",
           MAHAL_ADI: formData.name || "",
           ILCE: formData.ilce || "",
-          KOORDINAT: formData.koordinat || "",
+          KOORDINAT: formData.latitude + "," + formData.longitude || "", // Koordinat verisi burada kullanılacak
         };
+        console.log("greenspaces formdata", dataForGreenSpaces);
         greenSpacesSuccess = await upsertGreenSpacesData(
           dataForGreenSpaces,
           formData._id
         );
       }
-
       if (isparkSuccess || greenSpacesSuccess) {
         const updatedPopupHTML = `
           <p>Düzenlenmiş Konum</p>
           <strong>${formData.name || "No Name"}</strong><br/>
           ${formData.description || "No Description"}<br/>
-          ${formData.type || "No Type"}<br/>
-          <button onclick="handleEditClick('${formData.name || ""}', '${
-          formData.description || ""
-        }', '${formData.type || ""} <button> class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
-        `;
+          ${formData.type || "No Type"}<br/> `;
         editingMarker.setPopup(
           new maplibregl.Popup({ offset: 25 }).setHTML(updatedPopupHTML)
         );
@@ -316,20 +324,18 @@ const Map = ({ location, setLocation }) => {
 
   // edit onclicki için global metod, burda formdatadan gelen değişkenler setformdata ile değiştirilebilir hale gelip düzenleme modunu etkinleştirir.
   window.handleEditClick = (
+    _id,
     name,
     description,
     type,
-    longitude,
-    latitude,
-    _id,
-    ilce,
-    koordinat,
-    saat,
+    type_desc,
     kapasite,
+    saat,
     county,
-    type_desc
+    longitude,
+    latitude
   ) => {
-    console.log('_id:', _id); // 
+    console.log("_id:", _id); //
     const marker = markers.current.find(
       (m) =>
         m.marker.getLngLat().toArray().join(",") ===
@@ -338,39 +344,76 @@ const Map = ({ location, setLocation }) => {
 
     if (marker) {
       setFormData({
+        _id,
         name,
         description,
         longitude,
         latitude,
         type,
-        _id,
-        koordinat,
-        ilce,
         saat,
         kapasite,
         county,
         type_desc,
+        fieldType: "ispark",
       });
       setEditingMarker(marker.marker); // Burada doğrudan marker'ı ayarlıyoruz
       setIsEditing(true);
     }
   };
 
-  const showPopup = (name, description, type, longitude, latitude) => {
+  window.handleEditClickGreen = (
+    _id,
+    name,
+    description,
+    ilce,
+    koordinat,
+    longitude,
+    latitude
+  ) => {
+    console.log("_id:", _id); //
+    const marker = markers.current.find(
+      (m) =>
+        m.marker.getLngLat().toArray().join(",") ===
+        [longitude, latitude].join(",")
+    );
+
+    if (marker) {
+      setFormData({
+        _id,
+        name,
+        description,
+        longitude,
+        latitude,
+        koordinat,
+        ilce,
+        fieldType: "greenSpaces",
+      });
+      setEditingMarker(marker.marker); // Burada doğrudan marker'ı ayarlıyoruz
+      setIsEditing(true);
+    }
+  };
+
+  const showPopup = (name, description, type, longitude, latitude, _id) => {
     const popupHTML = `
       <p>${type === "ispark" ? "Otopark" : "Park veya Yeşil Alan"}</p>
+      <p> ${_id} </p>
       <strong>${name || "Unknown"}</strong><br/>
       ${description || "Unknown"}<br/>
-      <button onclick="handleEditClick('${name || ""}', '${
-      description || ""
-    }', '${type || ""}', ${longitude || ""}, ${
-      latitude || ""
-    })" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+      <button onclick="handleEditClick('
+      '${_id}',
+      '${name || ""}', 
+      '${description || ""}', 
+      '${type || ""}', 
+      ${latitude || ""}, 
+      ${longitude || ""},
+
+    
+    )" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
     `;
 
     const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupHTML);
     const marker = new maplibregl.Marker()
-      .setLngLat([longitude, latitude])
+      .setLngLat([latitude, longitude])
       .setPopup(popup)
       .addTo(mapRef.current);
 

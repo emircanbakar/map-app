@@ -78,6 +78,7 @@ def get_all_park():
     if documents:
         park_list = [
             {
+                "_id": doc.get("_id"),
                 "PARK_NAME": doc.get("PARK_NAME"),
                 "LOCATION_NAME": doc.get("LOCATION_NAME"),
                 "PARK_TYPE_ID": doc.get("PARK_TYPE_ID"),
