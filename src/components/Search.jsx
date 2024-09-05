@@ -1,8 +1,40 @@
-import React, { useContext } from "react";
+import React, { useContext, } from "react";
 import MapContext from "../context/MapContext";
+import axios from "axios";
 
-const Search = ({handleDetails, handleSearch}) => {
-  const { searchQuery, setSearchQuery } = useContext(MapContext);
+const Search = () => {
+  const {
+    searchQuery,
+    setSearchQuery,
+    details,
+    setDetails,
+    setSearchResult,
+  } = useContext(MapContext);
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      searchLocation(searchQuery);
+    } else {
+      console.error("Search query is empty");
+    }
+  };
+
+  const handleDetails = () => setDetails(!details);
+
+  // search bar, maptiler geocoding ile arama işlemi yapma
+  const searchLocation = async (query) => {
+    try {
+      const response = await axios.get(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(
+          query
+        )}.json?key=9HThlwugrS3kGNIjxi5r`
+      );
+      const coordinates = response.data.features[0].geometry.coordinates;
+      setSearchResult(coordinates);
+    } catch (error) {
+      console.error("Error fetching geocoding data:", error);
+    }
+  };
 
   return (
     <div>

@@ -1,8 +1,12 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, useState, useRef } from "react";
 
 const MapContext = createContext();
 
 export const MapProvider = ({ children }) => {
+  const lastMarker = useRef(null);
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+
   const [mapStyle, setMapStyle] = useState(
     "https://api.maptiler.com/maps/streets/style.json?key=9HThlwugrS3kGNIjxi5r"
   );
@@ -77,6 +81,9 @@ export const MapProvider = ({ children }) => {
         setSelectedType,
         locationUser,
         setLocationUser,
+        lastMarker,
+        mapContainerRef,
+        mapRef,
       }}
     >
       {children}

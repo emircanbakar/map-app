@@ -7,10 +7,7 @@ import PopUpSave from "./PopUpSave";
 import MapContext from "../context/MapContext";
 
 const Map = ({ location, setLocation }) => {
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
   const markers = useRef([]);
-  const lastMarker = useRef(null);
   const {
     mapStyle,
     setMapStyle,
@@ -25,9 +22,11 @@ const Map = ({ location, setLocation }) => {
     setEditingMarker,
     formData,
     setFormData,
-    searchResult,
-    setSearchResult,
+    lastMarker,
     activeMarkerType,
+    mapRef,
+    mapContainerRef,
+    searchResult,
   } = useContext(MapContext);
 
   //harita görünümü değiştirme
@@ -110,7 +109,7 @@ const Map = ({ location, setLocation }) => {
           "http://127.0.0.1:8000/GetAllParkData/"
         );
         setApiLocations(response1.data);
-
+        // tekli istek yapısı
         const response2 = await axios.get(
           "http://127.0.0.1:8000/GetAllGreenFields/"
         );
@@ -122,6 +121,35 @@ const Map = ({ location, setLocation }) => {
 
     fetchLocations();
   }, []);
+
+  useEffect(() => {
+    // Arama işlemi yapıldıktan sonra, önceki marker varsa kaldırılır ve yeni bulunan konuma marker eklenir
+    if (searchResult && mapRef.current) {
+      markers.current.forEach((markerObj) => {
+        if (markerObj && markerObj.marker) {
+          markerObj.marker.remove();
+        }
+      });
+      markers.current = [];
+
+      // Eğer önceden eklenen bir marker varsa, onu da kaldır
+      if (lastMarker.current) {
+        lastMarker.current.remove();
+        lastMarker.current = null;
+      }
+
+      mapRef.current.flyTo({ center: searchResult, zoom: 14 });
+      const newMarker = new maplibregl.Marker()
+        .setLngLat(searchResult)
+        .addTo(mapRef.current);
+
+      // Yeni markerı kaydet
+      markers.current.push({ marker: newMarker, type: "searchResult" });
+
+      lastMarker.current = newMarker;
+    }
+  }, [searchResult]);
+
 
   const toggleMarkers = (type) => {
     //markerleri temizleme
@@ -427,48 +455,6 @@ const Map = ({ location, setLocation }) => {
     markers.current.push(marker);
   };
 
-  // search bar, maptiler geocoding ile arama işlemi yapma
-  const searchLocation = async (query) => {
-    try {
-      const response = await axios.get(
-        `https://api.maptiler.com/geocoding/${encodeURIComponent(
-          query
-        )}.json?key=9HThlwugrS3kGNIjxi5r`
-      );
-      const coordinates = response.data.features[0].geometry.coordinates;
-      setSearchResult(coordinates);
-    } catch (error) {
-      console.error("Error fetching geocoding data:", error);
-    }
-  };
-
-  useEffect(() => {
-    // Arama işlemi yapıldıktan sonra, önceki marker varsa kaldırılır ve yeni bulunan konuma marker eklenir
-    if (searchResult && mapRef.current) {
-      markers.current.forEach((markerObj) => {
-        if (markerObj && markerObj.marker) {
-          markerObj.marker.remove();
-        }
-      });
-      markers.current = [];
-
-      // Eğer önceden eklenen bir marker varsa, onu da kaldır
-      if (lastMarker.current) {
-        lastMarker.current.remove();
-        lastMarker.current = null;
-      }
-
-      mapRef.current.flyTo({ center: searchResult, zoom: 14 });
-      const newMarker = new maplibregl.Marker()
-        .setLngLat(searchResult)
-        .addTo(mapRef.current);
-
-      // Yeni markerı kaydet
-      markers.current.push({ marker: newMarker, type: "searchResult" });
-
-      lastMarker.current = newMarker;
-    }
-  }, [searchResult]);
 
   //harita üzerinde hareket edildikçe kordinat ve zoom bilgisi urlye eklenecek bu sayede url yönetimi sağlanacak
   useEffect(() => {
@@ -506,9 +492,7 @@ const Map = ({ location, setLocation }) => {
       <Card
         onStyleChange={handleStyleChange}
         onShowMarkers={toggleMarkers}
-        searchLocation={searchLocation}
         markers={markers}
-        mapRef={mapRef}
         formData={formData}
         showPopup={showPopup}
         setLocation={setLocation}

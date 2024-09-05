@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import MapContext from "../context/MapContext";
 import maplibregl from "maplibre-gl";
 
-const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
+const Dropdown = ({  markers }) => {
   const {
     selectedParking,
     selectedGreenSpace,
@@ -10,6 +10,7 @@ const Dropdown = ({ mapRef, markers, showPopup, formData }) => {
     greenSpaces,
     setSelectedGreenSpace,
     setSelectedParking,
+    mapRef,
   } = useContext(MapContext);
 
   const addParkingMarker = (longitude, latitude, name, description, parkTypeId, capacity, workingTime, county) => {

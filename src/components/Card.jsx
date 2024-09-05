@@ -11,10 +11,8 @@ const Card = ({
   onStyleChange,
   onShowMarkers,
   markers,
-  mapRef,
   showPopup,
   formData,
-  searchLocation,
   setLocation
 }) => {
   const {
@@ -23,9 +21,8 @@ const Card = ({
     isOpen,
     setIsOpen,
     details,
-    setDetails,
-    searchQuery,
     apiLocations,
+    mapRef,
   } = useContext(MapContext);
 
   const handleButtonClick = (type) => {
@@ -38,15 +35,6 @@ const Card = ({
     }
   };
 
-  const handleDetails = () => setDetails(!details);
-
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      searchLocation(searchQuery);
-    } else {
-      console.error("Search query is empty");
-    }
-  };
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const handleFilter = (typeId) => {
@@ -101,8 +89,8 @@ const Card = ({
 
   return (
     <div className="fixed top-4 left-4 bg-white w-[350px] h-auto shadow-lg p-4 z-10 rounded-md">
-      <Search handleDetails={handleDetails} handleSearch={handleSearch} />
-
+      <Search markers={markers} />
+      {/* bu kısmı toparlayabilirsin*/}
       {details && (
         <div className="mt-4 transition-all">
           <div className="mt-4 flex items-center justify-between">
@@ -132,9 +120,6 @@ const Card = ({
 
           <Dropdown
             markers={markers}
-            mapRef={mapRef}
-            showPopup={showPopup}
-            formData={formData}
           />
 
           <div className="relative flex justify-between text-left mt-4">
