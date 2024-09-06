@@ -10,7 +10,6 @@ const Map = ({ location, setLocation }) => {
   const markers = useRef([]);
   const {
     mapStyle,
-    setMapStyle,
     apiLocations,
     setApiLocations,
     greenSpaces,
@@ -28,11 +27,6 @@ const Map = ({ location, setLocation }) => {
     mapContainerRef,
     searchResult,
   } = useContext(MapContext);
-
-  //harita görünümü değiştirme
-  const handleStyleChange = (styleUrl) => {
-    setMapStyle(styleUrl);
-  };
 
   //haritayı oluşturma ve 3d hale getirme, sağ tık ile döndürme, harita görünmü değişimi ve bu değişim sonrası temizleme işlemi
   useEffect(() => {
@@ -490,10 +484,8 @@ const Map = ({ location, setLocation }) => {
     <div className="relative h-screen w-full">
       <div ref={mapContainerRef} className="w-full h-full" />
       <Card
-        onStyleChange={handleStyleChange}
         onShowMarkers={toggleMarkers}
         markers={markers}
-        formData={formData}
         showPopup={showPopup}
         setLocation={setLocation}
       />
