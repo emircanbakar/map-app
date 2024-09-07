@@ -139,11 +139,12 @@ const Dropdown = ({  markers }) => {
           <div className="flex justify-between">
             <select
               id="isparkDropdown"
+              key={undefined}
               value={selectedParking}
               onChange={(e) => setSelectedParking(e.target.value)}
               className="w-full border border-gray-300 rounded p-2 my-2"
             >
-              <option value={""} key={""}>
+              <option value={undefined} key={undefined}>
                 Seçiniz
               </option>
               {apiLocations.map((loc) => (
@@ -165,11 +166,12 @@ const Dropdown = ({  markers }) => {
           <div className="flex justify-between">
             <select
               id="greenSpacesDropdown"
+              key={undefined}
               value={selectedGreenSpace}
               onChange={(e) => setSelectedGreenSpace(e.target.value)}
               className="w-full border border-gray-300 rounded p-2 my-2"
             >
-              <option value={""} key={""}>
+              <option value={undefined} key={undefined} >
                 Seçiniz
               </option>
               {greenSpaces.map((space) => (

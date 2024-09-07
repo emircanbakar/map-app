@@ -3,13 +3,8 @@ import MapContext from "../context/MapContext";
 import axios from "axios";
 
 const Search = () => {
-  const {
-    searchQuery,
-    setSearchQuery,
-    details,
-    setDetails,
-    setSearchResult,
-  } = useContext(MapContext);
+  const { searchQuery, setSearchQuery, details, setDetails, setSearchResult } =
+    useContext(MapContext);
 
   const handleSearch = () => {
     if (searchQuery.trim()) {

@@ -28,7 +28,6 @@ const Map = ({ location, setLocation }) => {
     searchResult,
   } = useContext(MapContext);
 
-  //haritayı oluşturma ve 3d hale getirme, sağ tık ile döndürme, harita görünmü değişimi ve bu değişim sonrası temizleme işlemi
   useEffect(() => {
     if (!mapRef.current) {
       mapRef.current = new maplibregl.Map({
@@ -82,32 +81,20 @@ const Map = ({ location, setLocation }) => {
     } else {
       mapRef.current.setStyle(mapStyle);
     }
-
-    // stil değiştiğinde markerleri siler
-    // return () => {
-    //   if (mapRef.current) {
-    //     mapRef.current.remove();
-    //     mapRef.current = null;
-    //   }
-    // };
   }, [mapStyle]);
 
   //ibbden datayı çekme
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        // const response1 = await axios.get(
-        //   "https://data.ibb.gov.tr/api/3/action/datastore_search?resource_id=f4f56e58-5210-4f17-b852-effe356a890c"
-        // );
-        const response1 = await axios.get(
-          "http://127.0.0.1:8000/GetAllParkData/"
-        );
+        const [response1, response2] = await Promise.all([
+          axios.get("http://127.0.0.1:8000/GetAllParkData/"),
+          axios.get("http://127.0.0.1:8000/GetAllGreenFields/"),
+        ]);
+
         setApiLocations(response1.data);
-        // tekli istek yapısı
-        const response2 = await axios.get(
-          "http://127.0.0.1:8000/GetAllGreenFields/"
-        );
         setGreenSpaces(response2.data);
+        console.log("response çalışıyor");
       } catch (error) {
         console.error("Error fetching API data:", error);
       }
@@ -115,35 +102,6 @@ const Map = ({ location, setLocation }) => {
 
     fetchLocations();
   }, []);
-
-  useEffect(() => {
-    // Arama işlemi yapıldıktan sonra, önceki marker varsa kaldırılır ve yeni bulunan konuma marker eklenir
-    if (searchResult && mapRef.current) {
-      markers.current.forEach((markerObj) => {
-        if (markerObj && markerObj.marker) {
-          markerObj.marker.remove();
-        }
-      });
-      markers.current = [];
-
-      // Eğer önceden eklenen bir marker varsa, onu da kaldır
-      if (lastMarker.current) {
-        lastMarker.current.remove();
-        lastMarker.current = null;
-      }
-
-      mapRef.current.flyTo({ center: searchResult, zoom: 14 });
-      const newMarker = new maplibregl.Marker()
-        .setLngLat(searchResult)
-        .addTo(mapRef.current);
-
-      // Yeni markerı kaydet
-      markers.current.push({ marker: newMarker, type: "searchResult" });
-
-      lastMarker.current = newMarker;
-    }
-  }, [searchResult]);
-
 
   const toggleMarkers = (type) => {
     //markerleri temizleme
@@ -243,54 +201,24 @@ const Map = ({ location, setLocation }) => {
     }
   };
 
-  useEffect(() => {
-    // Kullanıcı konum bilgisi geldiğinde marker ekleme işlemi
-    if (location && mapRef.current) {
-      const { lat, lng } = location;
-
-      // Eski marker'ları kaldırma
-      markers.current.forEach((markerObj) => {
-        if (markerObj && markerObj.marker) {
-          markerObj.marker.remove();
-        }
-      });
-      markers.current = [];
-
-      // Yeni marker ekle
-      const newMarker = new maplibregl.Marker()
-        .setLngLat([lng, lat])
-        .addTo(mapRef.current);
-
-      // Yeni markerı kaydet
-      markers.current.push({ marker: newMarker, type: "geolocation" });
-      mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
-      lastMarker.current = newMarker;
-    }
-  }, [location]);
-
-  // dataibbye upsert atılmasa da güncelleme metodu
-  const upsertIsparkData = async (data, id) => {
+  const upsertData = async (data, id) => {
     try {
-      const response1 = await axios.post(
-        `http://127.0.0.1:8000/UpdateParkData/${id}`,
-        data
-      );
-      return response1.data;
+      const [isparkResponse, greenSpacesResponse] = await Promise.all([
+        data.fieldType === "ispark"
+          ? axios.post(`http://127.0.0.1:8000/UpdateParkData/${id}`, data)
+          : Promise.resolve(null),
+        data.fieldType === "greenSpaces"
+          ? axios.post(`http://127.0.0.1:8000/UpdateGreenFields/${id}`, data)
+          : Promise.resolve(null),
+      ]);
+
+      return {
+        isparkSuccess: !!isparkResponse?.data,
+        greenSpacesSuccess: !!greenSpacesResponse?.data,
+      };
     } catch (error) {
       console.error("Error updating data:", error);
-      return false;
-    }
-  };
-  const upsertGreenSpacesData = async (data, id) => {
-    try {
-      const response2 = await axios.post(
-        `http://127.0.0.1:8000/UpdateGreenFields/${id}`,
-        data
-      );
-      return response2.data;
-    } catch (error) {
-      console.error("Error updating Green Spaces data:", error);
-      return false;
+      return { isparkSuccess: false, greenSpacesSuccess: false };
     }
   };
 
@@ -299,11 +227,11 @@ const Map = ({ location, setLocation }) => {
     console.log("Form Data on Submit: ", formData); // Konsola form verisini yazdır
 
     if (editingMarker) {
-      let isparkSuccess = false;
-      let greenSpacesSuccess = false;
+      let dataForRequest;
       if (formData.fieldType === "ispark") {
-        const dataForIspark = {
+        dataForRequest = {
           _id: formData._id,
+          fieldType: formData.fieldType,
           PARK_NAME: formData.name || "",
           LOCATION_NAME: formData.description || "",
           PARK_TYPE_ID: formData.type || "",
@@ -314,39 +242,42 @@ const Map = ({ location, setLocation }) => {
           LONGITUDE: parseFloat(formData.longitude) || "",
           LATITUDE: parseFloat(formData.latitude) || "",
         };
-        console.log("ispark data formdata", dataForIspark);
-        isparkSuccess = await upsertIsparkData(dataForIspark, formData._id);
-      }
-
-      if (formData.fieldType === "greenSpaces") {
-        const dataForGreenSpaces = {
+        console.log("ispark data formdata", dataForRequest);
+      } else if (formData.fieldType === "greenSpaces") {
+        dataForRequest = {
+          _id: formData._id,
+          fieldType: formData.fieldType,
           TUR: formData.description || "",
           MAHAL_ADI: formData.name || "",
           ILCE: formData.ilce || "",
-          KOORDINAT: formData.latitude + "," + formData.longitude || "", // Koordinat verisi burada kullanılacak
+          KOORDINAT: formData.latitude + "," + formData.longitude || "",
         };
-        console.log("greenspaces formdata", dataForGreenSpaces);
-        greenSpacesSuccess = await upsertGreenSpacesData(
-          dataForGreenSpaces,
+        console.log("greenspaces formdata", dataForRequest);
+      }
+
+      if (dataForRequest) {
+        const { isparkSuccess, greenSpacesSuccess } = await upsertData(
+          dataForRequest,
           formData._id
         );
-      }
-      if (isparkSuccess || greenSpacesSuccess) {
-        const updatedPopupHTML = `
-          <p>Düzenlenmiş Konum</p>
-          <strong>${formData.name || "No Name"}</strong><br/>
-          ${formData.description || "No Description"}<br/>
-          ${formData.type ? formData.type : ""}<br/>
-          ${formData.ilce ? formData.ilce : ""}<br/>
-          ${formData.saat ? formData.saat : ""}<br/>
-          ${formData.kapasite ? formData.kapasite : ""}<br/>
-          ${formData.county ? formData.county : ""}<br/>`;
-        editingMarker.setPopup(
-          new maplibregl.Popup({ offset: 25 }).setHTML(updatedPopupHTML)
-        );
-        setIsEditing(false);
-      } else {
-        console.error("Failed to update data in one or both APIs");
+
+        if (isparkSuccess || greenSpacesSuccess) {
+          const updatedPopupHTML = `
+            <p>Düzenlenmiş Konum</p>
+            <strong>${formData.name || "No Name"}</strong><br/>
+            ${formData.description || "No Description"}<br/>
+            ${formData.type ? formData.type : ""}<br/>
+            ${formData.ilce ? formData.ilce : ""}<br/>
+            ${formData.saat ? formData.saat : ""}<br/>
+            ${formData.kapasite ? formData.kapasite : ""}<br/>
+            ${formData.county ? formData.county : ""}<br/>`;
+          editingMarker.setPopup(
+            new maplibregl.Popup({ offset: 25 }).setHTML(updatedPopupHTML)
+          );
+          setIsEditing(false);
+        } else {
+          console.error("Failed to update data in one or both APIs");
+        }
       }
     }
   };
@@ -417,40 +348,59 @@ const Map = ({ location, setLocation }) => {
         ilce,
         fieldType: "greenSpaces",
       });
-      setEditingMarker(marker.marker); // Burada doğrudan marker'ı ayarlıyoruz
+      setEditingMarker(marker.marker);
       setIsEditing(true);
     }
   };
 
-  const showPopup = (name, description, type, longitude, latitude, _id) => {
-    const popupHTML = `
-      <p>${type === "ispark" ? "Otopark" : "Park veya Yeşil Alan"}</p>
-      <p> ${_id} </p>
-      <strong>${name || "Unknown"}</strong><br/>
-      ${description || "Unknown"}<br/>
-      <button onclick="handleEditClick('
-      '${_id}',
-      '${name || ""}', 
-      '${description || ""}', 
-      '${type || ""}', 
-      ${latitude || ""}, 
-      ${longitude || ""},
+  //current hatası yediğimiz için bunu search componentine yerleştiremiyoruz, lastmarker, mapref refinden kaynaklı olabilir
+  useEffect(() => {
+    if (searchResult && mapRef.current) {
+      markers.current.forEach((markerObj) => {
+        if (markerObj && markerObj.marker) {
+          markerObj.marker.remove();
+        }
+      });
+      markers.current = [];
 
-    
-    )" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
-    `;
+      // Eğer önceden eklenen bir marker varsa, onu da kaldır
+      if (lastMarker.current) {
+        lastMarker.current.remove();
+        lastMarker.current = null;
+      }
 
-    const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupHTML);
-    const marker = new maplibregl.Marker()
-      .setLngLat([latitude, longitude])
-      .setPopup(popup)
-      .addTo(mapRef.current);
+      mapRef.current.flyTo({ center: searchResult, zoom: 14 });
+      const newMarker = new maplibregl.Marker()
+        .setLngLat(searchResult)
+        .addTo(mapRef.current);
 
-    markers.current.push(marker);
-  };
+      // Yeni markerı kaydet
+      markers.current.push({ marker: newMarker, type: "searchResult" });
 
+      lastMarker.current = newMarker;
+    }
+  }, [searchResult]);
 
-  //harita üzerinde hareket edildikçe kordinat ve zoom bilgisi urlye eklenecek bu sayede url yönetimi sağlanacak
+  useEffect(() => {
+    // Kullanıcı konum bilgisi geldiğinde marker ekleme işlemi
+    if (location && mapRef.current) {
+      const { lat, lng } = location;
+      markers.current.forEach((markerObj) => {
+        if (markerObj && markerObj.marker) {
+          markerObj.marker.remove();
+        }
+      });
+      markers.current = [];
+
+      const newMarker = new maplibregl.Marker()
+        .setLngLat([lng, lat])
+        .addTo(mapRef.current);
+      markers.current.push({ marker: newMarker, type: "geolocation" });
+      mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
+      lastMarker.current = newMarker;
+    }
+  }, [location]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const centerLat = params.get("lat");
@@ -486,7 +436,6 @@ const Map = ({ location, setLocation }) => {
       <Card
         onShowMarkers={toggleMarkers}
         markers={markers}
-        showPopup={showPopup}
         setLocation={setLocation}
       />
 
