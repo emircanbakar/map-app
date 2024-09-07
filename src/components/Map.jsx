@@ -1,8 +1,7 @@
-import React, { useEffect, useContext, useRef } from "react";
+import { useEffect, useContext, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Card from "./Card";
-import axios from "axios";
 import PopUpSave from "./PopUpSave";
 import MapContext from "../context/MapContext";
 
@@ -10,8 +9,6 @@ const Map = () => {
   const markers = useRef([]);
   const {
     mapStyle,
-    setApiLocations,
-    setGreenSpaces,
     isEditing,
     lastMarker,
     mapContainerRef,
@@ -22,6 +19,16 @@ const Map = () => {
     setEditingMarker,
     setIsEditing,
   } = useContext(MapContext);
+
+  const handleMapMove = () => {
+    const { lng, lat } = mapRef.current.getCenter();
+    const zoom = mapRef.current.getZoom();
+    const url = new URL(window.location.href);
+    url.searchParams.set("lat", lat);
+    url.searchParams.set("lng", lng);
+    url.searchParams.set("zoom", zoom);
+    window.history.replaceState(null, "", url);
+  };
 
   useEffect(() => {
     if (!mapRef.current) {
@@ -77,26 +84,6 @@ const Map = () => {
       mapRef.current.setStyle(mapStyle);
     }
   }, [mapStyle]);
-
-  // DATA FETCH GET
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const [response1, response2] = await Promise.all([
-          axios.get("http://127.0.0.1:8000/GetAllParkData/"),
-          axios.get("http://127.0.0.1:8000/GetAllGreenFields/"),
-        ]);
-
-        setApiLocations(response1.data);
-        setGreenSpaces(response2.data);
-        console.log("response çalışıyor");
-      } catch (error) {
-        console.error("Error fetching API data:", error);
-      }
-    };
-
-    fetchLocations();
-  }, []);
 
   // edit onclicki için global metod, burda formdatadan gelen değişkenler setformdata ile değiştirilebilir hale gelip düzenleme modunu etkinleştirir.
   window.handleEditClick = (
@@ -223,16 +210,6 @@ const Map = () => {
       mapRef.current.setZoom(parseFloat(zoom));
     }
   }, []);
-
-  const handleMapMove = () => {
-    const { lng, lat } = mapRef.current.getCenter();
-    const zoom = mapRef.current.getZoom();
-    const url = new URL(window.location.href);
-    url.searchParams.set("lat", lat);
-    url.searchParams.set("lng", lng);
-    url.searchParams.set("zoom", zoom);
-    window.history.replaceState(null, "", url);
-  };
 
   useEffect(() => {
     mapRef.current.on("moveend", handleMapMove);

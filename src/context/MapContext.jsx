@@ -1,4 +1,5 @@
-import React, { createContext, useState, useRef } from "react";
+import React, { createContext, useState, useRef, useEffect } from "react";
+import axios from "axios";
 
 const MapContext = createContext();
 
@@ -24,6 +25,9 @@ export const MapProvider = ({ children }) => {
   const [selectedType, setSelectedType] = useState("");
   const [locationUser, setLocationUser] = useState(null);
   const [location, setLocation] = useState(null);
+  const [parkData, setParkData] = useState([]);
+  const [greenFieldData, setGreenFieldData] = useState([]);
+  const [activePanel, setActivePanel] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -39,6 +43,25 @@ export const MapProvider = ({ children }) => {
     type_desc: "",
     fieldType: "",
   });
+
+  const fetchLocations = async () => {
+    try {
+      const [response1, response2] = await Promise.all([
+        axios.get("http://127.0.0.1:8000/GetAllParkData/"),
+        axios.get("http://127.0.0.1:8000/GetAllGreenFields/"),
+      ]);
+
+      setApiLocations(response1.data);
+      setGreenSpaces(response2.data);
+      console.log("API verileri alındı.");
+    } catch (error) {
+      console.error("API verilerini alırken hata oluştu:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
 
   return (
     <MapContext.Provider
@@ -84,6 +107,13 @@ export const MapProvider = ({ children }) => {
         mapRef,
         location,
         setLocation,
+        parkData,
+        setParkData,
+        activePanel,
+        setActivePanel,
+        greenFieldData,
+        setGreenFieldData,
+        fetchLocations,
       }}
     >
       {children}
