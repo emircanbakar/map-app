@@ -6,15 +6,15 @@ import Search from "./Search";
 import ClusterButton from "./ClusterButton";
 import MapStyleDropdown from "./MapStyleDropdown";
 
-const Card = ({ onShowMarkers, markers, setLocation}) => {
+const Card = ({ onShowMarkers, markers, setLocation }) => {
   const { details } = useContext(MapContext);
 
   return (
     <div className="fixed top-4 left-4 bg-white w-[350px] h-auto shadow-lg p-4 z-10 rounded-md">
-      <Search markers={markers} />
+      <Search/>
       {details && (
         <div className="mt-4 transition-all">
-          <ClusterButton onShowMarkers={onShowMarkers} />
+          <ClusterButton onShowMarkers={onShowMarkers} markers={markers}/>
           <Filter markers={markers} />
           <Dropdown markers={markers} />
           <MapStyleDropdown setLocation={setLocation} />

@@ -23,6 +23,7 @@ export const MapProvider = ({ children }) => {
   const [distinctParkTypes, setDistinctParkTypes] = useState([]);
   const [selectedType, setSelectedType] = useState("");
   const [locationUser, setLocationUser] = useState(null);
+  const [location, setLocation] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -81,6 +82,8 @@ export const MapProvider = ({ children }) => {
         lastMarker,
         mapContainerRef,
         mapRef,
+        location,
+        setLocation,
       }}
     >
       {children}

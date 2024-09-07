@@ -2,8 +2,8 @@ import React, { useContext } from "react";
 import Location from "./Location";
 import MapContext from "../context/MapContext";
 
-const MapStyleDropdown = ({ setLocation }) => {
-  const { setIsOpen, isOpen, setMapStyle } = useContext(MapContext);
+const MapStyleDropdown = () => {
+  const { setIsOpen, isOpen, setMapStyle, setLocation } = useContext(MapContext);
   const toggleDropdown = () => setIsOpen(!isOpen);
   const onStyleChange = (styleUrl) => {
     setMapStyle(styleUrl);
